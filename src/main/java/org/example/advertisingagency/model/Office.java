@@ -10,6 +10,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -30,7 +31,7 @@ public class Office {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "CityID", nullable = false)
-    private City cityID;
+    private City city;
 
     @NotNull
     @Column(name = "CreateDatetime", nullable = false)
@@ -38,5 +39,15 @@ public class Office {
 
     @Column(name = "UpdateDatetime")
     private Instant updateDatetime;
+
+    @PrePersist
+    protected void onCreate() {
+        createDatetime = OffsetDateTime.now().toInstant();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updateDatetime = OffsetDateTime.now().toInstant();
+    }
 
 }

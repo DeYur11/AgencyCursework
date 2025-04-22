@@ -8,6 +8,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -43,4 +44,13 @@ public class ServicesInProgress {
     @Column(name = "UpdateDatetime")
     private Instant updateDatetime;
 
+    @PrePersist
+    protected void onCreate() {
+        createDatetime = OffsetDateTime.now().toInstant();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updateDatetime = OffsetDateTime.now().toInstant();
+    }
 }

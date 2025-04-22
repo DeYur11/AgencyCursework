@@ -8,11 +8,12 @@ import lombok.Setter;
 import org.hibernate.annotations.Nationalized;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "Countries")
+@Table(name = "Countries", schema = "dbo")
 public class Country {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,4 +32,14 @@ public class Country {
     @Column(name = "UpdateDatetime")
     private Instant updateDatetime;
 
+
+    @PrePersist
+    protected void onCreate() {
+        createDatetime = OffsetDateTime.now().toInstant();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updateDatetime = OffsetDateTime.now().toInstant();
+    }
 }

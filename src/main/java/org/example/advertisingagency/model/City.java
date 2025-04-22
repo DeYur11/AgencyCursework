@@ -15,7 +15,7 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "Cities")
+@Table(name = "Cities", schema = "dbo")
 public class City {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +30,7 @@ public class City {
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "CountryID")
-    private Country countryID;
+    private Country country;
 
     @NotNull
     @Column(name = "CreateDatetime", nullable = false)

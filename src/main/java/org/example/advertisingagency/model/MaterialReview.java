@@ -8,6 +8,7 @@ import org.hibernate.annotations.Nationalized;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -50,5 +51,15 @@ public class MaterialReview {
 
     @Column(name = "UpdateDatetime")
     private Instant updateDatetime;
+
+    @PrePersist
+    protected void onCreate() {
+        createDatetime = OffsetDateTime.now().toInstant();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updateDatetime = OffsetDateTime.now().toInstant();
+    }
 
 }
