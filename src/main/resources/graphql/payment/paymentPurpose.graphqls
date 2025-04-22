@@ -1,0 +1,7 @@
+type PaymentPurpose {
+    id: ID!
+    name: String
+    createDatetime: String!
+    updateDatetime: String
+    payments: [Payment!]
+}

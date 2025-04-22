@@ -1,0 +1,7 @@
+type Country {
+    id: ID!
+    name: String
+    createDatetime: String!
+    updateDatetime: String
+    cities: [City!]
+}

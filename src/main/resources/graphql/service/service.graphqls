@@ -1,0 +1,10 @@
+type Service {
+    id: ID!
+    duration: Int
+    estimateCost:   Float
+    type: ServiceType!
+    serviceName: String
+    createDatetime: String!
+    updateDatetime: String
+    projectServices: [ProjectService!]
+}
