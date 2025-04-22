@@ -2,9 +2,6 @@ package org.example.advertisingagency;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import java.sql.*;
-
 @SpringBootApplication
 public class AdvertisingAgencyApplication {
 
