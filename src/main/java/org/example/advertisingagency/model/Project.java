@@ -47,12 +47,12 @@ public class Project {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "StatusID")
-    private ProjectStatus statusID;
+    private ProjectStatus status;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "TypeID", nullable = false)
-    private ProjectType typeID;
+    private ProjectType type;
 
     @Column(name = "PaymentDeadline")
     private LocalDate paymentDeadline;
@@ -60,11 +60,11 @@ public class Project {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "ClientID", nullable = false)
-    private Client clientID;
+    private Client client;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ManagerID")
-    private Worker managerID;
+    private Worker manager;
 
     @Size(max = 1024)
     @Column(name = "Description", length = 1024)

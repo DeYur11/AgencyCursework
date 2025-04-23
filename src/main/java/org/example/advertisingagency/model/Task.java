@@ -44,7 +44,7 @@ public class Task {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ServiceInProgressID")
-    private ServicesInProgress serviceInProgressID;
+    private ServicesInProgress serviceInProgress;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "AssignedWorkerId")

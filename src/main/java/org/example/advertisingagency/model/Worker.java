@@ -46,12 +46,12 @@ public class Worker {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "PositionID", nullable = false)
-    private Position positionID;
+    private Position position;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "OfficeID", nullable = false)
-    private Office officeID;
+    private Office office;
 
     @NotNull
     @Column(name = "IsReviewer", nullable = false)

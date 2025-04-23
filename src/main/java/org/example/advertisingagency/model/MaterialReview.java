@@ -13,6 +13,7 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @Entity
+@Table(name = "MaterialReview")
 public class MaterialReview {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,11 +23,11 @@ public class MaterialReview {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "MaterialID", nullable = false)
-    private Material materialID;
+    private Material material;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MaterialSummaryID")
-    private MaterialSummary materialSummaryID;
+    private MaterialSummary materialSummary;
 
     @Nationalized
     @Lob
@@ -43,7 +44,7 @@ public class MaterialReview {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ReviewerID")
-    private Worker reviewerID;
+    private Worker reviewer;
 
     @NotNull
     @Column(name = "CreateDatetime", nullable = false)

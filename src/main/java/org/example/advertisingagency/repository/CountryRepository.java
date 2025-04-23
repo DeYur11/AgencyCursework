@@ -1,4 +1,4 @@
-package org.example.advertisingagency.repositories;
+package org.example.advertisingagency.repository;
 
 import org.example.advertisingagency.model.Country;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -13,6 +13,7 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @Entity
+@Table(name = "Material")
 public class Material {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,7 +22,7 @@ public class Material {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TypeID")
-    private Type typeID;
+    private MaterialType typeID;
 
     @Size(max = 150)
     @NotNull

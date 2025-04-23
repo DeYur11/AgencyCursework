@@ -13,6 +13,7 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @Entity
+@Table(name = "Keyword")
 public class Keyword {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

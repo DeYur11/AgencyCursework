@@ -13,7 +13,8 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @Entity
-public class Type {
+@Table(name = "MaterialType")
+public class MaterialType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TypeID", nullable = false)
