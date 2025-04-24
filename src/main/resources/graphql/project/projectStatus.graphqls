@@ -1,0 +1,7 @@
+type ProjectStatus {
+    id: ID!
+    name: String
+    createDatetime: String!
+    updateDatetime: String
+    projects: [Project!]
+}

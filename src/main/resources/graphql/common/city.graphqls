@@ -1,0 +1,18 @@
+type City {
+    id: ID!
+    name: String
+    country: Country
+    createDatetime: String!
+    updateDatetime: String
+    offices: [Office!]
+}
+
+input CreateCityInput {
+    name: String!
+    countryId: ID!
+}
+
+input UpdateCityInput {
+    name: String
+    countryId: ID
+}

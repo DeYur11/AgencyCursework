@@ -1,0 +1,18 @@
+type Office {
+    id: ID!
+    street: String
+    city: City!
+    createDatetime: String!
+    updateDatetime: String
+    workers: [Worker!]
+}
+
+input CreateOfficeInput {
+    street: String
+    cityId: ID!
+}
+
+input UpdateOfficeInput {
+    street: String
+    cityId: ID
+}

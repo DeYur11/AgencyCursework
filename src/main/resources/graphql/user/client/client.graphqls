@@ -1,0 +1,9 @@
+type Client {
+    id: ID!
+    name: String!
+    email: String
+    phoneNumber: String
+    createDatetime: String!
+    updateDatetime: String
+    projects: [Project!]
+}

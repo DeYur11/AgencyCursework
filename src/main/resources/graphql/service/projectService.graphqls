@@ -1,0 +1,9 @@
+type ProjectService {
+    id: ID!
+    service: Service
+    project: Project
+    amount: Int
+    createDatetime: String!
+    updateDatetime: String
+    servicesInProgress: [ServiceInProgress!]
+}

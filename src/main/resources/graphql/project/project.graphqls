@@ -1,0 +1,19 @@
+type Project {
+    id: ID!
+    name: String!
+    registrationDate: String!
+    startDate: String!
+    endDate: String
+    cost:  Float
+    estimateCost: Float
+    status: ProjectStatus
+    type: ProjectType!
+    paymentDeadline: String
+    client: Client!
+    manager: Worker
+    description: String
+    createDatetime: String!
+    updateDatetime: String
+    payments: [Payment!]
+    projectServices: [ProjectService!]
+}

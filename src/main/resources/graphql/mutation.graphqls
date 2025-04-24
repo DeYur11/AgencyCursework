@@ -1,0 +1,13 @@
+type Mutation {
+    createCountry(input: CreateCountryInput!): Country!
+    updateCountry(id: ID!, input: UpdateCountryInput!): Country
+    deleteCountry(id: ID!): Boolean!
+
+    createCity(input: CreateCityInput!): City!
+    updateCity(id: ID!, input: UpdateCityInput!): City
+    deleteCity(id: ID!): Boolean!
+
+    createOffice(input: CreateOfficeInput!): Office!
+    updateOffice(id: ID!, input: UpdateOfficeInput!): Office
+    deleteOffice(id: ID!): Boolean!
+}

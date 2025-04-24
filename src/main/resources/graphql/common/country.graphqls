@@ -1,0 +1,15 @@
+type Country {
+    id: ID!
+    name: String
+    createDatetime: String!
+    updateDatetime: String
+    cities: [City!]
+}
+
+input CreateCountryInput {
+    name: String!
+}
+
+input UpdateCountryInput {
+    name: String
+}

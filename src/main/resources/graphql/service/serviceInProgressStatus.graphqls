@@ -1,0 +1,7 @@
+type ServiceInProgressStatus {
+    id: ID!
+    name: String
+    createDatetime: String!
+    updateDatetime: String
+    servicesInProgress: [ServiceInProgress!]
+}
