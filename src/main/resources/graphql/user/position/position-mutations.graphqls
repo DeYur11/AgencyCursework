@@ -1,0 +1,5 @@
+extend type Mutation{
+    createPosition(name: String!): Position!
+    updatePosition(id: Int!, name: String): Position
+    deletePosition(id: Int!): Boolean!
+}

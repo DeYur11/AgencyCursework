@@ -1,72 +1,98 @@
 package org.example.advertisingagency.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class WorkerService {
+
     private final WorkerRepository workerRepository;
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
     private final MaterialReviewRepository materialReviewRepository;
+    private final PositionRepository positionRepository;
+    private final OfficeRepository officeRepository;
 
-    public WorkerService(WorkerRepository workerRepository,
-                         ProjectRepository projectRepository,
-                         TaskRepository taskRepository,
-                         MaterialReviewRepository materialReviewRepository) {
+    @Autowired
+    public WorkerService(
+            WorkerRepository workerRepository,
+            ProjectRepository projectRepository,
+            TaskRepository taskRepository,
+            MaterialReviewRepository materialReviewRepository,
+            PositionRepository positionRepository,
+            OfficeRepository officeRepository) {
         this.workerRepository = workerRepository;
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
         this.materialReviewRepository = materialReviewRepository;
+        this.positionRepository = positionRepository;
+        this.officeRepository = officeRepository;
     }
 
-    public List<Worker> findAll() {
+    public List<Worker> getAllWorkers() {
         return workerRepository.findAll();
     }
 
-    public Optional<Worker> findOne(Integer id) {
-        return workerRepository.findById(id);
+    public Worker getWorkerById(Integer id) {
+        return workerRepository.findById(id).orElse(null);
     }
 
-    public Worker create(Worker worker) {
+    @Transactional
+    public Worker createWorker(String name, String surname, String email, String phoneNumber,
+                               Integer positionId, Integer officeId, Boolean isReviewer) {
+        Position position = positionRepository.findById(positionId)
+                .orElseThrow(() -> new EntityNotFoundException("Position not found with id: " + positionId));
+        Office office = officeRepository.findById(officeId)
+                .orElseThrow(() -> new EntityNotFoundException("Office not found with id: " + officeId));
+
+        Worker worker = new Worker();
+        worker.setName(name);
+        worker.setSurname(surname);
+        worker.setEmail(email);
+        worker.setPhoneNumber(phoneNumber);
+        worker.setIsReviewer(isReviewer);
+        worker.setPosition(position);
+        worker.setOffice(office);
+
         return workerRepository.save(worker);
     }
 
-    public Optional<Worker> update(Integer id, Worker updated) {
-        return workerRepository.findById(id).map(w -> {
-            w.setName(updated.getName());
-            w.setSurname(updated.getSurname());
-            w.setEmail(updated.getEmail());
-            w.setPhoneNumber(updated.getPhoneNumber());
-            w.setIsReviewer(updated.getIsReviewer());
-            w.setPosition(updated.getPosition());
-            w.setOffice(updated.getOffice());
-            w.setUpdateDatetime(updated.getUpdateDatetime());
-            return workerRepository.save(w);
-        });
+    @Transactional
+    public Worker updateWorker(Integer id, String name, String surname, String email, String phoneNumber,
+                               Integer positionId, Integer officeId, Boolean isReviewer) {
+        Worker worker = workerRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + id));
+
+        if (name != null) worker.setName(name);
+        if (surname != null) worker.setSurname(surname);
+        if (email != null) worker.setEmail(email);
+        if (phoneNumber != null) worker.setPhoneNumber(phoneNumber);
+        if (isReviewer != null) worker.setIsReviewer(isReviewer);
+        if (positionId != null) {
+            Position position = positionRepository.findById(positionId)
+                    .orElseThrow(() -> new EntityNotFoundException("Position not found with id: " + positionId));
+            worker.setPosition(position);
+        }
+        if (officeId != null) {
+            Office office = officeRepository.findById(officeId)
+                    .orElseThrow(() -> new EntityNotFoundException("Office not found with id: " + officeId));
+            worker.setOffice(office);
+        }
+
+        return workerRepository.save(worker);
     }
 
-    public boolean delete(Integer id) {
-        return workerRepository.findById(id).map(w -> {
-            workerRepository.delete(w);
-            return true;
-        }).orElse(false);
-    }
-
-    public Position getPosition(Integer workerId) {
-        return workerRepository.findById(workerId)
-                .map(Worker::getPosition)
-                .orElse(null);
-    }
-
-    public Office getOffice(Integer workerId) {
-        return workerRepository.findById(workerId)
-                .map(Worker::getOffice)
-                .orElse(null);
+    @Transactional
+    public boolean deleteWorker(Integer id) {
+        if (!workerRepository.existsById(id)) return false;
+        workerRepository.deleteById(id);
+        return true;
     }
 
     public List<Project> getManagedProjects(Integer workerId) {
