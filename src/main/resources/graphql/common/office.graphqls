@@ -6,13 +6,3 @@ type Office {
     updateDatetime: String
     workers: [Worker!]
 }
-
-input CreateOfficeInput {
-    street: String
-    cityId: ID!
-}
-
-input UpdateOfficeInput {
-    street: String
-    cityId: ID
-}

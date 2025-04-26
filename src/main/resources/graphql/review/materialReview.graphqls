@@ -9,3 +9,5 @@ type MaterialReview {
     createDatetime: String!
     updateDatetime: String
 }
+
+#TODO Дописати тут мапінг

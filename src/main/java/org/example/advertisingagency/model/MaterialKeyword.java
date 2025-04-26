@@ -19,12 +19,12 @@ public class MaterialKeyword {
     @MapsId("materialID")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "MaterialID", nullable = false)
-    private Material materialID;
+    private Material material;
 
     @MapsId("keywordID")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "KeywordID", nullable = false)
-    private Keyword keywordID;
+    private Keyword keyword;
 
     @NotNull
     @Column(name = "CreateDatetime", nullable = false)

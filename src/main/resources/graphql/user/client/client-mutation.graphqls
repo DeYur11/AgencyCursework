@@ -1,5 +1,0 @@
-extend type Mutation {
-    createClient(name: String!, email: String, phoneNumber: String): Client!
-    updateClient(id: Int!, name: String, email: String, phoneNumber: String): Client
-    deleteClient(id: Int!): Boolean!
-}

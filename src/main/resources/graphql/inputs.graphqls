@@ -1,0 +1,336 @@
+input CreateCountryInput {
+    name: String!
+}
+
+input UpdateCountryInput {
+    name: String
+}
+
+# City
+input CreateCityInput {
+    countryId: ID!
+    name: String!
+}
+
+input UpdateCityInput {
+    countryId: ID
+    name: String
+}
+
+# Office
+input CreateOfficeInput {
+    cityId: ID!
+    name: String!
+}
+
+input UpdateOfficeInput {
+    cityId: ID
+    name: String
+}
+
+# Client
+input CreateClientInput {
+    officeId: ID!
+    name: String!
+    email: String
+    phoneNumber: String
+}
+
+input UpdateClientInput {
+    officeId: ID
+    name: String
+    email: String
+    phoneNumber: String
+}
+
+# Position
+input CreatePositionInput {
+    name: String!
+}
+
+input UpdatePositionInput {
+    name: String
+}
+
+# Worker
+input CreateWorkerInput {
+    officeId: ID!
+    positionId: ID!
+    name: String!
+    surname: String!
+    email: String!
+    phoneNumber: String
+    isReviewer: Boolean!
+}
+
+input UpdateWorkerInput {
+    officeId: ID
+    positionId: ID
+    name: String
+    surname: String
+    email: String
+    phoneNumber: String
+    isReviewer: Boolean
+}
+
+# ProjectType
+input CreateProjectTypeInput {
+    name: String!
+}
+
+input UpdateProjectTypeInput {
+    name: String
+}
+
+# ProjectStatus
+input CreateProjectStatusInput {
+    name: String!
+}
+
+input UpdateProjectStatusInput {
+    name: String
+}
+
+# Project
+input CreateProjectInput {
+    clientId: ID!
+    projectTypeId: ID!
+    projectStatusId: ID!
+    name: String!
+    description: String
+    registrationDate: String!
+}
+
+input UpdateProjectInput {
+    clientId: ID
+    projectTypeId: ID
+    projectStatusId: ID
+    name: String
+    description: String
+    registrationDate: String
+}
+
+# ServiceType
+input CreateServiceTypeInput {
+    name: String!
+}
+
+input UpdateServiceTypeInput {
+    name: String
+}
+
+# Service
+input CreateServiceInput {
+    serviceTypeId: ID!
+    name: String!
+    estimateCost: Float!
+}
+
+input UpdateServiceInput {
+    serviceTypeId: ID
+    name: String
+    estimateCost: Float
+}
+
+# MaterialType
+input CreateMaterialTypeInput {
+    name: String!
+}
+
+input UpdateMaterialTypeInput {
+    name: String
+}
+
+# MaterialStatus
+input CreateMaterialStatusInput {
+    name: String!
+}
+
+input UpdateMaterialStatusInput {
+    name: String
+}
+
+# UsageRestriction
+input CreateUsageRestrictionInput {
+    name: String!
+}
+
+input UpdateUsageRestrictionInput {
+    name: String
+}
+
+# LicenceType
+input CreateLicenceTypeInput {
+    name: String!
+}
+
+input UpdateLicenceTypeInput {
+    name: String
+}
+
+# TargetAudience
+input CreateTargetAudienceInput {
+    name: String!
+}
+
+input UpdateTargetAudienceInput {
+    name: String
+}
+
+# Language
+input CreateLanguageInput {
+    name: String!
+}
+
+input UpdateLanguageInput {
+    name: String
+}
+
+# TaskStatus
+input CreateTaskStatusInput {
+    name: String!
+}
+
+input UpdateTaskStatusInput {
+    name: String
+}
+
+# MaterialSummary
+input CreateMaterialSummaryInput {
+    languageId: ID!
+    name: String!
+    description: String
+}
+
+input UpdateMaterialSummaryInput {
+    languageId: ID
+    name: String
+    description: String
+}
+
+# PaymentPurpose
+input CreatePaymentPurposeInput {
+    name: String!
+}
+
+input UpdatePaymentPurposeInput {
+    name: String
+}
+
+# Payment
+input CreatePaymentInput {
+    projectId: ID!
+    paymentPurposeId: ID!
+    amount: Float!
+    paymentDate: String!
+}
+
+input UpdatePaymentInput {
+    projectId: ID
+    paymentPurposeId: ID
+    amount: Float
+    paymentDate: String
+}
+
+# ServiceInProgressStatus
+input CreateServiceInProgressStatusInput {
+    name: String!
+}
+
+input UpdateServiceInProgressStatusInput {
+    name: String
+}
+
+# ProjectService
+input CreateProjectServiceInput {
+    projectId: ID!
+    serviceId: ID!
+    amount: Int!
+}
+
+input UpdateProjectServiceInput {
+    projectId: ID
+    serviceId: ID
+    amount: Int
+}
+
+# ServiceInProgress
+input CreateServiceInProgressInput {
+    projectServiceId: ID!
+    assignedWorkerId: ID!
+    serviceInProgressStatusId: ID!
+    startDatetime: String!
+    endDatetime: String
+}
+
+input UpdateServiceInProgressInput {
+    projectServiceId: ID
+    assignedWorkerId: ID
+    serviceInProgressStatusId: ID
+    startDatetime: String
+    endDatetime: String
+}
+
+# Keyword
+input CreateKeywordInput {
+    name: String!
+}
+
+input UpdateKeywordInput {
+    name: String
+}
+
+# Task
+input CreateTaskInput {
+    serviceInProgressId: ID!
+    assignedWorkerId: ID!
+    name: String!
+    deadline: String!
+}
+
+input UpdateTaskInput {
+    serviceInProgressId: ID
+    assignedWorkerId: ID
+    name: String
+    deadline: String
+}
+
+# Material
+input CreateMaterialInput {
+    typeId: ID
+    name: String!
+    statusId: ID
+    description: String
+    usageRestrictionId: ID
+    licenceTypeId: ID
+    targetAudienceId: ID
+    languageId: ID
+    taskId: ID
+}
+
+input UpdateMaterialInput {
+    typeId: ID
+    name: String
+    statusId: ID
+    description: String
+    usageRestrictionId: ID
+    licenceTypeId: ID
+    targetAudienceId: ID
+    languageId: ID
+    taskId: ID
+}
+
+# MaterialReview
+input CreateMaterialReviewInput {
+    materialId: ID!
+    reviewerId: ID!
+    feedback: String
+    rating: Int
+}
+
+input UpdateMaterialReviewInput {
+    materialId: ID
+    reviewerId: ID
+    feedback: String
+    rating: Int
+}

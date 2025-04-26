@@ -6,13 +6,3 @@ type City {
     updateDatetime: String
     offices: [Office!]
 }
-
-input CreateCityInput {
-    name: String!
-    countryId: ID!
-}
-
-input UpdateCityInput {
-    name: String
-    countryId: ID
-}

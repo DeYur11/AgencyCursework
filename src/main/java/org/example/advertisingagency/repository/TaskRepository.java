@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface TaskRepository extends JpaRepository<Task, Integer> {
     List<Task> findAllByAssignedWorker_Id(int id);
+    List<Task> findAllByTaskStatus_Id(Integer taskStatusId);
 }

@@ -1,6 +1,8 @@
 package org.example.advertisingagency.service.user;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.example.advertisingagency.dto.worker.CreateWorkerInput;
+import org.example.advertisingagency.dto.worker.UpdateWorkerInput;
 import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,50 +45,42 @@ public class WorkerService {
         return workerRepository.findById(id).orElse(null);
     }
 
-    @Transactional
-    public Worker createWorker(String name, String surname, String email, String phoneNumber,
-                               Integer positionId, Integer officeId, Boolean isReviewer) {
-        Position position = positionRepository.findById(positionId)
-                .orElseThrow(() -> new EntityNotFoundException("Position not found with id: " + positionId));
-        Office office = officeRepository.findById(officeId)
-                .orElseThrow(() -> new EntityNotFoundException("Office not found with id: " + officeId));
-
+    public Worker createWorker(CreateWorkerInput input) {
         Worker worker = new Worker();
-        worker.setName(name);
-        worker.setSurname(surname);
-        worker.setEmail(email);
-        worker.setPhoneNumber(phoneNumber);
-        worker.setIsReviewer(isReviewer);
-        worker.setPosition(position);
-        worker.setOffice(office);
+        worker.setName(input.getName());
+        worker.setSurname(input.getSurname());
+        worker.setEmail(input.getEmail());
+        worker.setPhoneNumber(input.getPhoneNumber());
+        worker.setIsReviewer(input.getIsReviewer());
+
+        // Підвантажити Position і Office по input.getPositionId() і input.getOfficeId()
+        worker.setPosition(positionRepository.findById(input.getPositionId()).orElseThrow());
+        worker.setOffice(officeRepository.findById(input.getOfficeId()).orElseThrow());
 
         return workerRepository.save(worker);
     }
 
-    @Transactional
-    public Worker updateWorker(Integer id, String name, String surname, String email, String phoneNumber,
-                               Integer positionId, Integer officeId, Boolean isReviewer) {
+    public Worker updateWorker(Integer id, UpdateWorkerInput input) {
         Worker worker = workerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + id));
 
-        if (name != null) worker.setName(name);
-        if (surname != null) worker.setSurname(surname);
-        if (email != null) worker.setEmail(email);
-        if (phoneNumber != null) worker.setPhoneNumber(phoneNumber);
-        if (isReviewer != null) worker.setIsReviewer(isReviewer);
-        if (positionId != null) {
-            Position position = positionRepository.findById(positionId)
-                    .orElseThrow(() -> new EntityNotFoundException("Position not found with id: " + positionId));
-            worker.setPosition(position);
+        if (input.getName() != null) worker.setName(input.getName());
+        if (input.getSurname() != null) worker.setSurname(input.getSurname());
+        if (input.getEmail() != null) worker.setEmail(input.getEmail());
+        if (input.getPhoneNumber() != null) worker.setPhoneNumber(input.getPhoneNumber());
+        if (input.getIsReviewer() != null) worker.setIsReviewer(input.getIsReviewer());
+
+        if (input.getPositionId() != null) {
+            worker.setPosition(positionRepository.findById(input.getPositionId()).orElseThrow());
         }
-        if (officeId != null) {
-            Office office = officeRepository.findById(officeId)
-                    .orElseThrow(() -> new EntityNotFoundException("Office not found with id: " + officeId));
-            worker.setOffice(office);
+
+        if (input.getOfficeId() != null) {
+            worker.setOffice(officeRepository.findById(input.getOfficeId()).orElseThrow());
         }
 
         return workerRepository.save(worker);
     }
+
 
     @Transactional
     public boolean deleteWorker(Integer id) {

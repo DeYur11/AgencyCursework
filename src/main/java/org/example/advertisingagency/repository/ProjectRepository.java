@@ -8,4 +8,6 @@ import java.util.List;
 public interface ProjectRepository extends JpaRepository<Project, Integer> {
   List<Project> findAllByClient_Id(int clientID);
   List<Project> findAllByManager_Id(Integer workerId);
+  List<Project> findAllByProjectType_Id(Integer projectType);
+  List<Project> findAllByStatus_Id(Integer statusId);
 }

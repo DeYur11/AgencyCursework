@@ -3,5 +3,13 @@ package org.example.advertisingagency.repository;
 import org.example.advertisingagency.model.Material;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface MaterialRepository extends JpaRepository<Material, Integer> {
+    List<Material> findAllByLanguage_Id(Integer languageId);
+    List<Material> findAllByTargetAudience_Id(Integer targetAudienceId);
+    List<Material> findAllByLicenceType_Id(Integer licenceTypeId);
+    List<Material> findAllByStatus_Id(Integer statusId);
+    List<Material> findAllByType_Id(Integer typeId);
+    List<Material> findAllByUsageRestriction_Id(Integer usageRestrictionId);
 }

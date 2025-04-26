@@ -9,4 +9,5 @@ import java.util.List;
 public interface MaterialReviewRepository extends JpaRepository<MaterialReview, Integer> {
   List<MaterialReview> findAllByMaterial_Id(int id);
   List<MaterialReview> findAllByReviewer_Id(int id);
+  List<MaterialReview> findAllByMaterialSummary_Id(Integer materialSummaryId);
 }

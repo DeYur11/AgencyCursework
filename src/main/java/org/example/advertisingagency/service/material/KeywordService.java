@@ -1,5 +1,6 @@
-package org.example.advertisingagency.service;
+package org.example.advertisingagency.service.material;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.dto.material.keyword.CreateKeywordInput;
 import org.example.advertisingagency.dto.material.keyword.UpdateKeywordInput;
 import org.example.advertisingagency.model.Keyword;
@@ -29,41 +30,39 @@ public class KeywordService {
     public Keyword createKeyword(CreateKeywordInput input) {
         Keyword keyword = new Keyword();
         keyword.setName(input.getName());
-        keyword.setCreateDatetime(Instant.now());
-        keyword.setUpdateDatetime(Instant.now());
         return keywordRepository.save(keyword);
     }
 
-    public Keyword updateKeyword(UpdateKeywordInput input) {
-        Keyword keyword = keywordRepository.findById(input.getId())
-                .orElseThrow(() -> new RuntimeException("Keyword not found"));
-        keyword.setName(input.getName());
-        keyword.setUpdateDatetime(Instant.now());
-        return keywordRepository.save(keyword);
-    }
+    public Keyword updateKeyword(Integer id, UpdateKeywordInput input) {
+        Keyword keyword = keywordRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Keyword not found with id: " + id));
 
-    public boolean deleteKeyword(Integer id) {
-        if (keywordRepository.existsById(id)) {
-            keywordRepository.deleteById(id);
-            return true;
+        if (input.getName() != null) {
+            keyword.setName(input.getName());
         }
-        return false;
+        return keywordRepository.save(keyword);
+    }
+
+    public Boolean deleteKeyword(Integer id) {
+        if (!keywordRepository.existsById(id)) {
+            return false;
+        }
+        keywordRepository.deleteById(id);
+        return true;
     }
 
     public Keyword getKeywordById(Integer id) {
-        return keywordRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Keyword not found"));
+        return keywordRepository.findById(id).orElse(null);
     }
-
-    public List<Material> getMaterialsForKeyword(Keyword keyword) {
-        return materialKeywordRepository.findByKeywordID(keyword)
-                .stream()
-                .map(MaterialKeyword::getMaterialID)
-                .collect(Collectors.toList());
-    }
-
 
     public List<Keyword> getAllKeywords() {
         return keywordRepository.findAll();
+    }
+
+    public List<Material> getMaterialsForKeyword(Keyword keyword) {
+        return materialKeywordRepository.findByKeyword(keyword)
+                .stream()
+                .map(MaterialKeyword::getMaterial)
+                .collect(Collectors.toList());
     }
 }

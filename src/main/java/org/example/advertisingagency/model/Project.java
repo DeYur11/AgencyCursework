@@ -52,7 +52,7 @@ public class Project {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "TypeID", nullable = false)
-    private ProjectType type;
+    private ProjectType projectType;
 
     @Column(name = "PaymentDeadline")
     private LocalDate paymentDeadline;
