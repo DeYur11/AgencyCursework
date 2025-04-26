@@ -1,4 +1,4 @@
-package org.example.advertisingagency.service;
+package org.example.advertisingagency.service.user;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.model.Position;
@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service

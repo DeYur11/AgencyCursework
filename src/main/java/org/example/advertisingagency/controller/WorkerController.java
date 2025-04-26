@@ -1,7 +1,7 @@
 package org.example.advertisingagency.controller;
 
 import org.example.advertisingagency.model.*;
-import org.example.advertisingagency.service.WorkerService;
+import org.example.advertisingagency.service.user.WorkerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;

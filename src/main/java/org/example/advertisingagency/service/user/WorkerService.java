@@ -1,4 +1,4 @@
-package org.example.advertisingagency.service;
+package org.example.advertisingagency.service.user;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.model.*;

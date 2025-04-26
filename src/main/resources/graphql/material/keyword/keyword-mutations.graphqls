@@ -1,0 +1,14 @@
+extend type Mutation {
+    createKeyword(input: CreateKeywordInput!): Keyword
+    updateKeyword(input: UpdateKeywordInput!): Keyword
+    deleteKeyword(id: ID!): Boolean
+}
+
+input CreateKeywordInput {
+    name: String!
+}
+
+input UpdateKeywordInput {
+    id: ID!
+    name: String
+}

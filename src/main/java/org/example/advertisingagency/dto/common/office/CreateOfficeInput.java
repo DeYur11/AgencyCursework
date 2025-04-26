@@ -1,11 +1,11 @@
-package org.example.advertisingagency.dto.office;
+package org.example.advertisingagency.dto.common.office;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class UpdateOfficeInput {
+public class CreateOfficeInput {
     private String street;
     private Integer cityId;
 }

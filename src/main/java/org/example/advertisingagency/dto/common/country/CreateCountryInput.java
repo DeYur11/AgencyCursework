@@ -1,4 +1,4 @@
-package org.example.advertisingagency.dto.country;
+package org.example.advertisingagency.dto.common.country;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package org.example.advertisingagency.dto.city;
+package org.example.advertisingagency.dto.common.city;
 
 import lombok.Getter;
 import lombok.Setter;

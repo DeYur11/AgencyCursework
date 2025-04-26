@@ -1,8 +1,8 @@
 package org.example.advertisingagency.controller;
 
-import org.example.advertisingagency.dto.country.UpdateCountryInput;
+import org.example.advertisingagency.dto.common.country.UpdateCountryInput;
 import jakarta.persistence.EntityNotFoundException;
-import org.example.advertisingagency.dto.country.CreateCountryInput;
+import org.example.advertisingagency.dto.common.country.CreateCountryInput;
 import org.example.advertisingagency.model.City;
 import org.example.advertisingagency.model.Country;
 import org.example.advertisingagency.repository.CityRepository;

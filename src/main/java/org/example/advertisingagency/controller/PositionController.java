@@ -2,7 +2,7 @@ package org.example.advertisingagency.controller;
 
 import org.example.advertisingagency.model.Position;
 import org.example.advertisingagency.model.Worker;
-import org.example.advertisingagency.service.PositionService;
+import org.example.advertisingagency.service.user.PositionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;

@@ -1,8 +1,8 @@
 package org.example.advertisingagency.controller;
 
 import jakarta.persistence.EntityNotFoundException;
-import org.example.advertisingagency.dto.office.CreateOfficeInput;
-import org.example.advertisingagency.dto.office.UpdateOfficeInput;
+import org.example.advertisingagency.dto.common.office.CreateOfficeInput;
+import org.example.advertisingagency.dto.common.office.UpdateOfficeInput;
 import org.example.advertisingagency.model.City;
 import org.example.advertisingagency.model.Office;
 import org.example.advertisingagency.repository.CityRepository;

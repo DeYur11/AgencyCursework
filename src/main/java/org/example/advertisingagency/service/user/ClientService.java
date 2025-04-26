@@ -1,4 +1,4 @@
-package org.example.advertisingagency.service;
+package org.example.advertisingagency.service.user;
 
 import org.example.advertisingagency.model.Client;
 import org.example.advertisingagency.model.Project;
