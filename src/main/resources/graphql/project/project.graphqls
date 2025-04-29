@@ -7,7 +7,7 @@ type Project {
     cost:  Float
     estimateCost: Float
     status: ProjectStatus
-    type: ProjectType!
+    projectType: ProjectType!
     paymentDeadline: String
     client: Client!
     manager: Worker

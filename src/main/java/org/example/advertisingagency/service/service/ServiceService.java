@@ -39,7 +39,7 @@ public class ServiceService {
         Service service = new Service();
         service.setDuration(input.getDuration());
         service.setEstimateCost(input.getEstimateCost() != null ? BigDecimal.valueOf(input.getEstimateCost()) : null);
-        service.setTypeID(findServiceType(input.getTypeId()));
+        service.setServiceType(findServiceType(input.getTypeId()));
         service.setServiceName(input.getServiceName());
         return serviceRepository.save(service);
     }
@@ -50,7 +50,7 @@ public class ServiceService {
 
         if (input.getDuration() != null) service.setDuration(input.getDuration());
         if (input.getEstimateCost() != null) service.setEstimateCost(BigDecimal.valueOf(input.getEstimateCost()));
-        if (input.getTypeId() != null) service.setTypeID(findServiceType(input.getTypeId()));
+        if (input.getTypeId() != null) service.setServiceType(findServiceType(input.getTypeId()));
         if (input.getServiceName() != null) service.setServiceName(input.getServiceName());
 
         return serviceRepository.save(service);
@@ -70,6 +70,11 @@ public class ServiceService {
     }
 
     public List<ProjectService> getProjectServicesByService(Integer serviceId) {
-        return projectServiceRepository.findAllByServiceID_Id(serviceId);
+        return projectServiceRepository.findAllByService_Id(serviceId);
     }
+
+    public List<Service> getServicesByIds(List<Integer> ids) {
+        return serviceRepository.findAllById(ids);
+    }
+
 }

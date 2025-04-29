@@ -20,11 +20,11 @@ public class ProjectService {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ServiceID")
-    private Service serviceID;
+    private Service service;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ProjectID")
-    private Project projectID;
+    private Project project;
 
     @Column(name = "Amount", columnDefinition = "tinyint")
     private Short amount;

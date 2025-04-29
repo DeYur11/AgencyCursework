@@ -35,6 +35,11 @@ public class PaymentController {
         return paymentService.getAllPayments();
     }
 
+    @QueryMapping
+    public List<Payment> paymentsByProject(@Argument Integer projectId) {
+        return paymentService.getPaymentsByProject(projectId);
+    }
+
     @MutationMapping
     @Transactional
     public Payment createPayment(@Argument CreatePaymentInput input) {
@@ -55,7 +60,7 @@ public class PaymentController {
 
     @SchemaMapping(typeName = "Payment", field = "project")
     public Project project(Payment payment) {
-        return payment.getProjectID();
+        return payment.getProject();
     }
 
     @SchemaMapping(typeName = "Payment", field = "paymentPurpose")

@@ -1,8 +1,8 @@
 type Payment {
     id: ID!
     transactionNumber: String!
-    sum: Float!
-    date: String
+    paymentSum: Float!
+    paymentDate: String
     project: Project!
     paymentPurpose: PaymentPurpose
     createDatetime: String!

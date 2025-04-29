@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 @Service
 public class MaterialService {
 
+    private final String STARTING_STATUS = "Draft";
+
     private final MaterialRepository materialRepository;
     private final MaterialKeywordRepository materialKeywordRepository;
     private final MaterialTypeRepository materialTypeRepository;
@@ -47,6 +49,11 @@ public class MaterialService {
         this.materialReviewRepository = materialReviewRepository;
     }
 
+    public List<Material> getMaterialsByTask(Integer taskId) {
+        return materialRepository.findAllByTask_Id(taskId);
+    }
+
+
     public Material getMaterialById(Integer id) {
         return materialRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material not found"));
@@ -63,7 +70,7 @@ public class MaterialService {
         material.setCreateDatetime(Instant.now());
 
         material.setType(findMaterialType(input.getTypeId()));
-        material.setStatus(findMaterialStatus(input.getStatusId()));
+        material.setStatus(materialStatusRepository.findByName(STARTING_STATUS).orElse(null));
         material.setUsageRestriction(findUsageRestriction(input.getUsageRestrictionId()));
         material.setLicenceType(findLicenceType(input.getLicenceTypeId()));
         material.setTargetAudience(findTargetAudience(input.getTargetAudienceId()));

@@ -299,7 +299,6 @@ input UpdateTaskInput {
 input CreateMaterialInput {
     typeId: ID
     name: String!
-    statusId: ID
     description: String
     usageRestrictionId: ID
     licenceTypeId: ID

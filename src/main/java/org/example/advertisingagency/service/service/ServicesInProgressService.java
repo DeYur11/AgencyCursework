@@ -82,4 +82,9 @@ public class ServicesInProgressService {
         return projectServiceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("ProjectService not found with id: " + id));
     }
+
+    public List<ServicesInProgress> getServicesInProgressByProjectServiceIds(List<Integer> projectServiceIds) {
+        return servicesInProgressRepository.findAllByProjectServiceID_IdIn(projectServiceIds);
+    }
+
 }

@@ -14,6 +14,7 @@ import org.example.advertisingagency.repository.WorkerRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MaterialReviewService {
@@ -103,5 +104,10 @@ public class MaterialReviewService {
     private Worker findWorker(Integer id) {
         return workerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + id));
+    }
+
+    public List<MaterialReview> getReviewsByMaterial(Integer materialId) {
+        return Optional.ofNullable(materialReviewRepository.findAllByMaterial_Id(materialId))
+                .orElse(List.of());
     }
 }

@@ -1,12 +1,13 @@
 package org.example.advertisingagency.controller;
 
-import org.dataloader.DataLoader;
 import org.example.advertisingagency.dto.project.CreateProjectInput;
 import org.example.advertisingagency.dto.project.UpdateProjectInput;
 import org.example.advertisingagency.model.Payment;
 import org.example.advertisingagency.model.Project;
 import org.example.advertisingagency.model.ProjectService;
 import org.example.advertisingagency.repository.PaymentRepository;
+import org.example.advertisingagency.service.service.ProjectServiceService;
+import org.example.advertisingagency.util.BatchLoaderUtils;
 import org.springframework.graphql.data.method.annotation.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Controller
@@ -23,10 +23,12 @@ public class ProjectController {
 
     private final org.example.advertisingagency.service.project.ProjectService projectService;
     private final PaymentRepository paymentRepository;
+    private final ProjectServiceService projectServiceService;
 
-    public ProjectController(org.example.advertisingagency.service.project.ProjectService projectService, PaymentRepository paymentRepository) {
+    public ProjectController(org.example.advertisingagency.service.project.ProjectService projectService, PaymentRepository paymentRepository, ProjectServiceService projectServiceService) {
         this.projectService = projectService;
         this.paymentRepository = paymentRepository;
+        this.projectServiceService = projectServiceService;
     }
 
     @QueryMapping
@@ -63,20 +65,21 @@ public class ProjectController {
                 .map(Project::getId)
                 .toList();
 
+        List<Payment> payments = BatchLoaderUtils.loadInBatches(
+                projectIds,
+                paymentRepository::findAllByProject_IdIn
+        );
+
+        Map<Integer, Project> idToProject = projects.stream()
+                .collect(Collectors.toMap(Project::getId, p -> p));
+
         Map<Project, List<Payment>> result = new HashMap<>();
 
-        final int batchSize = 1000;
-
-        for (int i = 0; i < projectIds.size(); i += batchSize) {
-            List<Integer> batchIds = projectIds.subList(i, Math.min(i + batchSize, projectIds.size()));
-
-            List<Payment> batchPayments = paymentRepository.findAllByProjectID_IdIn(batchIds);
-
-            for (Payment payment : batchPayments) {
-                Project project = payment.getProjectID();
-                result.computeIfAbsent(project, p -> new ArrayList<>()).add(payment);
-            }
+        for (Payment payment : payments) {
+            Project project = idToProject.get(payment.getProject().getId());
+            result.computeIfAbsent(project, p -> new ArrayList<>()).add(payment);
         }
+
         for (Project project : projects) {
             result.putIfAbsent(project, List.of());
         }
@@ -84,11 +87,13 @@ public class ProjectController {
         return result;
     }
 
-
-
-
     @SchemaMapping(typeName = "Project", field = "projectServices")
     public List<ProjectService> projectServices(Project project) {
-        return projectService.getProjectServicesForProject(project.getId());
+        return projectServiceService.getProjectServicesByProject(project.getId());
+    }
+
+    @QueryMapping
+    public List<Project> projectsByClient(@Argument Integer clientId) {
+        return projectService.getProjectsByClient(clientId);
     }
 }

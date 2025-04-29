@@ -43,8 +43,8 @@ public class ProjectServiceService {
 
     public ProjectService createProjectService(CreateProjectServiceInput input) {
         ProjectService projectService = new ProjectService();
-        projectService.setServiceID(findService(input.getServiceId()));
-        projectService.setProjectID(findProject(input.getProjectId()));
+        projectService.setService(findService(input.getServiceId()));
+        projectService.setProject(findProject(input.getProjectId()));
         projectService.setAmount(input.getAmount());
         return projectServiceRepository.save(projectService);
     }
@@ -54,10 +54,10 @@ public class ProjectServiceService {
                 .orElseThrow(() -> new EntityNotFoundException("ProjectService not found with id: " + id));
 
         if (input.getServiceId() != null) {
-            projectService.setServiceID(findService(input.getServiceId()));
+            projectService.setService(findService(input.getServiceId()));
         }
         if (input.getProjectId() != null) {
-            projectService.setProjectID(findProject(input.getProjectId()));
+            projectService.setProject(findProject(input.getProjectId()));
         }
         if (input.getAmount() != null) {
             projectService.setAmount(input.getAmount());
@@ -86,5 +86,9 @@ public class ProjectServiceService {
 
     public List<ServicesInProgress> getServicesInProgressByProjectService(Integer projectServiceId) {
         return servicesInProgressRepository.findAllByProjectServiceID_Id(projectServiceId);
+    }
+
+    public List<ProjectService> getProjectServicesByProject(Integer projectId) {
+        return projectServiceRepository.findAllByProject_Id(projectId);
     }
 }

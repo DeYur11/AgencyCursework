@@ -58,6 +58,7 @@ type Query {
     tasksByWorker(workerId: ID!): [Task!]!
     material(id: ID!): Material
     materials: [Material!]!
+    materialsByTask(taskId: ID!): [Material!]!
     materialReview(id: ID!): MaterialReview
     materialReviews: [MaterialReview!]!
     reviewsByMaterial(materialId: ID!): [MaterialReview!]!

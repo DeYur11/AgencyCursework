@@ -20,11 +20,15 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final ProjectRepository projectRepository;
     private final PaymentPurposeRepository paymentPurposeRepository;
+    private final ProjectService projectService;
+    private final PaymentPurposeService paymentPurposeService;
 
-    public PaymentService(PaymentRepository paymentRepository, ProjectRepository projectRepository, PaymentPurposeRepository paymentPurposeRepository) {
+    public PaymentService(PaymentRepository paymentRepository, ProjectRepository projectRepository, PaymentPurposeRepository paymentPurposeRepository, ProjectService projectService, PaymentPurposeService paymentPurposeService) {
         this.paymentRepository = paymentRepository;
         this.projectRepository = projectRepository;
         this.paymentPurposeRepository = paymentPurposeRepository;
+        this.projectService = projectService;
+        this.paymentPurposeService = paymentPurposeService;
     }
 
     public Payment getPaymentById(Integer id) {
@@ -41,9 +45,9 @@ public class PaymentService {
         payment.setTransactionNumber(input.getTransactionNumber());
         payment.setPaymentSum(BigDecimal.valueOf(input.getSum()));
         payment.setPaymentDate(input.getDate());
-        payment.setProjectID(findProject(input.getProjectId()));
+        payment.setProject(projectService.getProjectById(input.getProjectId()));
         if (input.getPaymentPurposeId() != null) {
-            payment.setPaymentPurpose(findPaymentPurpose(input.getPaymentPurposeId()));
+            payment.setPaymentPurpose(paymentPurposeService.getPaymentPurposeById(input.getPaymentPurposeId()));
         }
         return paymentRepository.save(payment);
     }
@@ -55,8 +59,8 @@ public class PaymentService {
         if (input.getTransactionNumber() != null) payment.setTransactionNumber(input.getTransactionNumber());
         if (input.getSum() != null) payment.setPaymentSum(BigDecimal.valueOf(input.getSum()));
         if (input.getDate() != null) payment.setPaymentDate(input.getDate());
-        if (input.getProjectId() != null) payment.setProjectID(findProject(input.getProjectId()));
-        if (input.getPaymentPurposeId() != null) payment.setPaymentPurpose(findPaymentPurpose(input.getPaymentPurposeId()));
+        if (input.getProjectId() != null) payment.setProject(projectService.getProjectById(input.getProjectId()));
+        if (input.getPaymentPurposeId() != null) payment.setPaymentPurpose(paymentPurposeService.getPaymentPurposeById(input.getPaymentPurposeId()));
 
         return paymentRepository.save(payment);
     }
@@ -69,13 +73,8 @@ public class PaymentService {
         return true;
     }
 
-    public Project findProject(Integer projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + projectId));
+    public List<Payment> getPaymentsByProject(Integer projectId) {
+        return paymentRepository.findAllByProject_Id(projectId);
     }
 
-    public PaymentPurpose findPaymentPurpose(Integer paymentPurposeId) {
-        return paymentPurposeRepository.findById(paymentPurposeId)
-                .orElseThrow(() -> new EntityNotFoundException("PaymentPurpose not found with id: " + paymentPurposeId));
-    }
 }

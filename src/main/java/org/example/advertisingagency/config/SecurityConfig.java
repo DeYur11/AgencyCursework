@@ -34,6 +34,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/**").permitAll()
                         .requestMatchers("/graphiql/**").permitAll()
                         .requestMatchers("/graphql/**").permitAll()
                         .anyRequest().authenticated()

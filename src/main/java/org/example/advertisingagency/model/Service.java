@@ -30,7 +30,7 @@ public class Service {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "TypeID", nullable = false)
-    private ServiceType typeID;
+    private ServiceType serviceType;
 
     @Size(max = 150)
     @Nationalized

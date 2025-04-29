@@ -27,6 +27,11 @@ public class MaterialReviewController {
     }
 
     @QueryMapping
+    public List<MaterialReview> reviewsByMaterial(@Argument Integer materialId) {
+        return materialReviewService.getReviewsByMaterial(materialId);
+    }
+
+    @QueryMapping
     public List<MaterialReview> materialReviews() {
         return materialReviewService.getAllMaterialReviews();
     }
@@ -48,4 +53,6 @@ public class MaterialReviewController {
     public boolean deleteMaterialReview(@Argument Integer id) {
         return materialReviewService.deleteMaterialReview(id);
     }
+
+
 }

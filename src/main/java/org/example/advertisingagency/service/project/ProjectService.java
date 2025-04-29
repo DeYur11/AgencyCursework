@@ -45,6 +45,10 @@ public class ProjectService {
         return projectRepository.findAll();
     }
 
+    public List<Project> getProjectsByIds(List<Integer> ids) {
+        return projectRepository.findAllById(ids);
+    }
+
     public Project createProject(CreateProjectInput input) {
         Project project = new Project();
         project.setName(input.getName());
@@ -114,11 +118,9 @@ public class ProjectService {
                 .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + id));
     }
 
-    public List<Payment> getPaymentsForProject(Integer projectId) {
-        return paymentRepository.findAllByProjectID_Id(projectId);
+    public List<Project> getProjectsByClient(Integer clientId) {
+        return projectRepository.findAllByClient_Id(clientId);
     }
 
-    public List<org.example.advertisingagency.model.ProjectService> getProjectServicesForProject(Integer projectId) {
-        return projectServiceRepository.findAllByProjectID_Id(projectId);
-    }
+
 }

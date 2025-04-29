@@ -100,4 +100,8 @@ public class WorkerService {
     public List<MaterialReview> getMaterialReviews(Integer workerId) {
         return materialReviewRepository.findAllByReviewer_Id(workerId);
     }
+
+    public List<Worker> getWorkersByOfficeId(Integer officeId) {
+        return workerRepository.findAllByOffice_Id(officeId);
+    }
 }

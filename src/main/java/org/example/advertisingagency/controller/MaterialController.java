@@ -30,6 +30,12 @@ public class MaterialController {
     }
 
     @QueryMapping
+    public List<Material> materialsByTask(@Argument Integer taskId) {
+        return materialService.getMaterialsByTask(taskId);
+    }
+
+
+    @QueryMapping
     public List<Material> materials() {
         return materialService.getAllMaterials();
     }

@@ -100,4 +100,16 @@ public class TaskService {
         return taskStatusRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("TaskStatus not found with id: " + id));
     }
+
+    public List<Task> getTasksByWorker(Integer workerId) {
+        return taskRepository.findAllByAssignedWorkerId(workerId);
+    }
+
+    public List<Task> getTasksByServiceInProgress(Integer serviceInProgressId) {
+        return taskRepository.findAllByServiceInProgress_Id(serviceInProgressId);
+    }
+
+    public List<Task> getTasksByServiceInProgressIds(List<Integer> ids) {
+        return taskRepository.findAllByServiceInProgress_IdIn(ids);
+    }
 }

@@ -56,6 +56,6 @@ public class ServiceTypeService {
     }
 
     public List<Service> getServicesByServiceType(Integer serviceTypeId) {
-        return serviceRepository.findAllByTypeID_Id(serviceTypeId);
+        return serviceRepository.findAllByServiceType_Id(serviceTypeId);
     }
 }

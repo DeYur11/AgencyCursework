@@ -6,7 +6,6 @@ import lombok.Data;
 public class CreateMaterialInput {
     private Integer typeId;
     private String name;
-    private Integer statusId;
     private String description;
     private Integer usageRestrictionId;
     private Integer licenceTypeId;

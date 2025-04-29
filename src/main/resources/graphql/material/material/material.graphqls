@@ -4,7 +4,7 @@ type Material {
     name: String!
     status: MaterialStatus
     description: String
-    usageRestrictions: UsageRestriction
+    usageRestriction: UsageRestriction
     licenceType: LicenceType
     targetAudience: TargetAudience
     language: Language

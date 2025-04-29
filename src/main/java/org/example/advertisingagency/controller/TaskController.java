@@ -2,11 +2,14 @@ package org.example.advertisingagency.controller;
 
 import org.example.advertisingagency.dto.task.CreateTaskInput;
 import org.example.advertisingagency.dto.task.UpdateTaskInput;
+import org.example.advertisingagency.model.Material;
 import org.example.advertisingagency.model.Task;
+import org.example.advertisingagency.service.material.MaterialService;
 import org.example.advertisingagency.service.task.TaskService;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +19,11 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+    private final MaterialService materialService;
 
-    public TaskController(TaskService taskService) {
+    public TaskController(TaskService taskService, MaterialService materialService) {
         this.taskService = taskService;
+        this.materialService = materialService;
     }
 
     @QueryMapping
@@ -47,5 +52,10 @@ public class TaskController {
     @Transactional
     public boolean deleteTask(@Argument Integer id) {
         return taskService.deleteTask(id);
+    }
+
+    @SchemaMapping(typeName = "Task", field = "materials")
+    public List<Material> getMaterials(Task task) {
+        return materialService.getMaterialsByTask(task.getId());
     }
 }

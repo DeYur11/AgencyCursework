@@ -8,4 +8,5 @@ import java.util.List;
 public interface ServicesInProgressRepository extends JpaRepository<ServicesInProgress, Integer> {
     List<ServicesInProgress> findAllByProjectServiceID_Id(Integer projectServiceId);
     List<ServicesInProgress> findAllByStatusID_Id(Integer statusId);
+    List<ServicesInProgress> findAllByProjectServiceID_IdIn(List<Integer> projectServiceIds);
 }
