@@ -2,7 +2,7 @@ type Project {
     id: ID!
     name: String!
     registrationDate: String!
-    startDate: String!
+    startDate: String
     endDate: String
     cost:  Float
     estimateCost: Float

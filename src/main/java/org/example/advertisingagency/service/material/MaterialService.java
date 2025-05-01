@@ -7,6 +7,7 @@ import org.example.advertisingagency.dto.material.material.UpdateMaterialInput;
 import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.repository.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -27,6 +28,7 @@ public class MaterialService {
     private final LanguageRepository languageRepository;
     private final TaskRepository taskRepository;
     private final MaterialReviewRepository materialReviewRepository;
+    private final KeywordRepository keywordRepository;
 
     public MaterialService(MaterialRepository materialRepository,
                            MaterialKeywordRepository materialKeywordRepository,
@@ -36,7 +38,7 @@ public class MaterialService {
                            LicenceTypeRepository licenceTypeRepository,
                            TargetAudienceRepository targetAudienceRepository,
                            LanguageRepository languageRepository,
-                           TaskRepository taskRepository, MaterialReviewRepository materialReviewRepository) {
+                           TaskRepository taskRepository, MaterialReviewRepository materialReviewRepository, KeywordRepository keywordRepository) {
         this.materialRepository = materialRepository;
         this.materialKeywordRepository = materialKeywordRepository;
         this.materialTypeRepository = materialTypeRepository;
@@ -47,6 +49,7 @@ public class MaterialService {
         this.languageRepository = languageRepository;
         this.taskRepository = taskRepository;
         this.materialReviewRepository = materialReviewRepository;
+        this.keywordRepository = keywordRepository;
     }
 
     public List<Material> getMaterialsByTask(Integer taskId) {
@@ -63,13 +66,14 @@ public class MaterialService {
         return materialRepository.findAll();
     }
 
+    @Transactional
     public Material createMaterial(CreateMaterialInput input) {
         Material material = new Material();
         material.setName(input.getName());
         material.setDescription(input.getDescription());
         material.setCreateDatetime(Instant.now());
 
-        material.setType(findMaterialType(input.getTypeId()));
+        material.setType(findMaterialType(input.getMaterialTypeId()));
         material.setStatus(materialStatusRepository.findByName(STARTING_STATUS).orElse(null));
         material.setUsageRestriction(findUsageRestriction(input.getUsageRestrictionId()));
         material.setLicenceType(findLicenceType(input.getLicenceTypeId()));
@@ -77,8 +81,28 @@ public class MaterialService {
         material.setLanguage(findLanguage(input.getLanguageId()));
         material.setTask(findTask(input.getTaskId()));
 
-        return materialRepository.save(material);
+        material = materialRepository.save(material);
+
+        if (input.getKeywordIds() != null && !input.getKeywordIds().isEmpty()) {
+            List<Keyword> keywords = keywordRepository.findAllById(input.getKeywordIds());
+            for (Keyword keyword : keywords) {
+                MaterialKeywordId id = new MaterialKeywordId();
+                id.setMaterialID(material.getId());
+                id.setKeywordID(keyword.getId());
+
+                MaterialKeyword mk = new MaterialKeyword();
+                mk.setId(id);
+                mk.setMaterial(material);
+                mk.setKeyword(keyword);
+
+                materialKeywordRepository.save(mk);
+            }
+        }
+
+
+        return material;
     }
+
 
     public Material updateMaterial(Integer id, UpdateMaterialInput input) {
         Material material = materialRepository.findById(id)
@@ -99,13 +123,20 @@ public class MaterialService {
         return materialRepository.save(material);
     }
 
+    @Transactional
     public Boolean deleteMaterial(Integer id) {
         if (!materialRepository.existsById(id)) {
             return false;
         }
+
+        // Спочатку видаляємо залежності
+        materialKeywordRepository.deleteByMaterialId(id);
+
+        // Потім видаляємо сам матеріал
         materialRepository.deleteById(id);
         return true;
     }
+
 
     public List<MaterialReview> getReviewsForMaterial(Material material) {
         return materialReviewRepository.findAllByMaterial_Id(material.getId());

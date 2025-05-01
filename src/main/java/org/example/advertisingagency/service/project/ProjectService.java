@@ -7,6 +7,8 @@ import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.repository.*;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -52,21 +54,21 @@ public class ProjectService {
     public Project createProject(CreateProjectInput input) {
         Project project = new Project();
         project.setName(input.getName());
-        project.setRegistrationDate(input.getRegistrationDate());
-        project.setStartDate(input.getStartDate());
-        project.setEndDate(input.getEndDate());
-        project.setCost(input.getCost());
-        project.setEstimateCost(input.getEstimateCost());
-        if (input.getStatusId() != null) {
-            project.setStatus(findStatus(input.getStatusId()));
-        }
-        project.setProjectType(findType(input.getTypeId()));
-        project.setPaymentDeadline(input.getPaymentDeadline());
-        project.setClient(findClient(input.getClientId()));
-        if (input.getManagerId() != null) {
-            project.setManager(findWorker(input.getManagerId()));
-        }
         project.setDescription(input.getDescription());
+        project.setCost(input.getCost() != null ? BigDecimal.valueOf(input.getCost()) : BigDecimal.ZERO);
+        project.setEstimateCost(input.getEstimateCost() != null ? BigDecimal.valueOf(input.getEstimateCost()) : BigDecimal.ZERO);
+        project.setPaymentDeadline(LocalDate.parse(input.getPaymentDeadline()));
+        project.setRegistrationDate(LocalDate.now());  // Тут можна встановити поточну дату як реєстраційну
+
+        // Пошук клієнта, типу проекту та менеджера (якщо вони є)
+        Client client = clientRepository.findById(input.getClientId()).orElseThrow(() -> new RuntimeException("Client not found"));
+        ProjectType projectType = projectTypeRepository.findById(input.getProjectTypeId()).orElseThrow(() -> new RuntimeException("ProjectType not found"));
+        Worker manager = input.getManagerId() != null ? workerRepository.findById(input.getManagerId()).orElse(null) : null;
+
+        project.setClient(client);
+        project.setProjectType(projectType);
+        project.setManager(manager);
+
         return projectRepository.save(project);
     }
 

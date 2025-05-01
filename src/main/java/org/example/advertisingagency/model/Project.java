@@ -32,8 +32,8 @@ public class Project {
     @Column(name = "RegistrationDate", nullable = false)
     private LocalDate registrationDate;
 
-    @NotNull
-    @Column(name = "StartDate", nullable = false)
+
+    @Column(name = "StartDate")
     private LocalDate startDate;
 
     @Column(name = "EndDate")

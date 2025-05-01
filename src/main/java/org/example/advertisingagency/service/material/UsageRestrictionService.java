@@ -33,7 +33,7 @@ public class UsageRestrictionService {
 
     public UsageRestriction createUsageRestriction(CreateUsageRestrictionInput input) {
         UsageRestriction usageRestriction = new UsageRestriction();
-        usageRestriction.setDescription(input.getDescription());
+        usageRestriction.setName(input.getDescription());
         return usageRestrictionRepository.save(usageRestriction);
     }
 
@@ -42,7 +42,7 @@ public class UsageRestrictionService {
                 .orElseThrow(() -> new EntityNotFoundException("UsageRestriction not found with id: " + id));
 
         if (input.getDescription() != null) {
-            usageRestriction.setDescription(input.getDescription());
+            usageRestriction.setName(input.getDescription());
         }
         return usageRestrictionRepository.save(usageRestriction);
     }

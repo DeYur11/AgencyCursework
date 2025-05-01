@@ -91,15 +91,17 @@ input UpdateProjectStatusInput {
     name: String
 }
 
-# Project
 input CreateProjectInput {
     clientId: ID!
     projectTypeId: ID!
-    projectStatusId: ID!
     name: String!
     description: String
-    registrationDate: String!
+    cost: Float
+    estimateCost: Float
+    paymentDeadline: String
+    managerId: ID
 }
+
 
 input UpdateProjectInput {
     clientId: ID
@@ -297,15 +299,18 @@ input UpdateTaskInput {
 
 # Material
 input CreateMaterialInput {
-    typeId: ID
     name: String!
     description: String
     usageRestrictionId: ID
     licenceTypeId: ID
     targetAudienceId: ID
     languageId: ID
+    typeId: ID
+    materialStatusId: ID
     taskId: ID
+    keywordIds: [ID!]
 }
+
 
 input UpdateMaterialInput {
     typeId: ID
