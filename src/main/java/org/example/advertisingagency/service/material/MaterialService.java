@@ -103,7 +103,7 @@ public class MaterialService {
         return material;
     }
 
-
+    @Transactional
     public Material updateMaterial(Integer id, UpdateMaterialInput input) {
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Material not found with id: " + id));
@@ -120,8 +120,34 @@ public class MaterialService {
         if (input.getLanguageId() != null) material.setLanguage(findLanguage(input.getLanguageId()));
         if (input.getTaskId() != null) material.setTask(findTask(input.getTaskId()));
 
-        return materialRepository.save(material);
+        material = materialRepository.save(material);
+
+        // 🔄 Оновлення keywords
+        if (input.getKeywordIds() != null) {
+            // 1. Видалити старі зв’язки
+            materialKeywordRepository.deleteAllByMaterialId(material.getId());
+
+            // 2. Додати нові зв’язки
+            if (!input.getKeywordIds().isEmpty()) {
+                List<Keyword> keywords = keywordRepository.findAllById(input.getKeywordIds());
+                for (Keyword keyword : keywords) {
+                    MaterialKeywordId mkId = new MaterialKeywordId();
+                    mkId.setMaterialID(material.getId());
+                    mkId.setKeywordID(keyword.getId());
+
+                    MaterialKeyword mk = new MaterialKeyword();
+                    mk.setId(mkId);
+                    mk.setMaterial(material);
+                    mk.setKeyword(keyword);
+
+                    materialKeywordRepository.save(mk);
+                }
+            }
+        }
+
+        return material;
     }
+
 
     @Transactional
     public Boolean deleteMaterial(Integer id) {

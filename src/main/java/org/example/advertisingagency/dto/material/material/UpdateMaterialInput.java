@@ -2,6 +2,8 @@ package org.example.advertisingagency.dto.material.material;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class UpdateMaterialInput {
     private Integer id;
@@ -14,4 +16,5 @@ public class UpdateMaterialInput {
     private Integer targetAudienceId;
     private Integer languageId;
     private Integer taskId;
+    private List<Integer> keywordIds;
 }

@@ -13,4 +13,5 @@ public interface MaterialKeywordRepository extends JpaRepository<MaterialKeyword
     List<MaterialKeyword> findByMaterial(Material material);
 
     void deleteByMaterialId(Integer id);
+    void deleteAllByMaterialId(Integer materialId);
 }

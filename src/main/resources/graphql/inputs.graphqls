@@ -322,6 +322,7 @@ input UpdateMaterialInput {
     targetAudienceId: ID
     languageId: ID
     taskId: ID
+    keywordIds: [ID!]
 }
 
 # MaterialReview
