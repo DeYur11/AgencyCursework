@@ -15,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -104,26 +105,31 @@ public class ProjectServiceController {
         return Mono.just(result);
     }
 
-    // === project ===
     @BatchMapping(typeName = "ProjectService", field = "project")
     public Mono<Map<ProjectService, Project>> getProjects(List<ProjectService> projectServices) {
         List<Integer> projectIds = projectServices.stream()
                 .map(ps -> ps.getProject().getId())
+                .distinct()
                 .toList();
 
         List<Project> projects = BatchLoaderUtils.loadInBatches(projectIds, projectService::getProjectsByIds);
 
         Map<Integer, Project> projectMap = projects.stream()
-                .collect(Collectors.toMap(Project::getId, p -> p));
-
-        Map<ProjectService, Project> result = projectServices.stream()
                 .collect(Collectors.toMap(
-                        ps -> ps,
-                        ps -> projectMap.get(ps.getProject().getId())
+                        Project::getId,
+                        Function.identity(),
+                        (a, b) -> a // уникнення DuplicateKeyException
                 ));
+
+        Map<ProjectService, Project> result = new LinkedHashMap<>();
+        for (ProjectService ps : projectServices) {
+            Project project = projectMap.get(ps.getProject().getId());
+            result.put(ps, project);
+        }
 
         return Mono.just(result);
     }
+
 
     // === servicesInProgress ===
     @BatchMapping(typeName = "ProjectService", field = "servicesInProgress")

@@ -15,8 +15,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Controller
@@ -80,6 +82,7 @@ public class ServicesInProgressController {
     public Mono<Map<ServicesInProgress, List<Task>>> getTasks(List<ServicesInProgress> servicesInProgressList) {
         List<Integer> serviceInProgressIds = servicesInProgressList.stream()
                 .map(ServicesInProgress::getId)
+                .distinct()
                 .toList();
 
         List<Task> tasks = BatchLoaderUtils.loadInBatches(
@@ -90,14 +93,22 @@ public class ServicesInProgressController {
         Map<Integer, List<Task>> tasksByServiceInProgressId = tasks.stream()
                 .collect(Collectors.groupingBy(task -> task.getServiceInProgress().getId()));
 
-        Map<ServicesInProgress, List<Task>> result = servicesInProgressList.stream()
+        Map<Integer, ServicesInProgress> sipMap = servicesInProgressList.stream()
                 .collect(Collectors.toMap(
-                        sip -> sip,
-                        sip -> tasksByServiceInProgressId.getOrDefault(sip.getId(), List.of())
+                        ServicesInProgress::getId,
+                        Function.identity(),
+                        (a, b) -> a
                 ));
+
+        Map<ServicesInProgress, List<Task>> result = new LinkedHashMap<>();
+        for (Integer id : serviceInProgressIds) {
+            ServicesInProgress sip = sipMap.get(id);
+            result.put(sip, tasksByServiceInProgressId.getOrDefault(id, List.of()));
+        }
 
         return Mono.just(result);
     }
+
 
     @QueryMapping
     public List<ServicesInProgress> servicesInProgressByProjectService(@Argument Integer projectServiceId) {

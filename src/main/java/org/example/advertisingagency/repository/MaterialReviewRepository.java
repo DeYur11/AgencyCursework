@@ -10,4 +10,5 @@ public interface MaterialReviewRepository extends JpaRepository<MaterialReview, 
   List<MaterialReview> findAllByMaterial_Id(int id);
   List<MaterialReview> findAllByReviewer_Id(int id);
   List<MaterialReview> findAllByMaterialSummary_Id(Integer materialSummaryId);
+  List<MaterialReview> findByMaterialIdIn(List<Integer> materialIds);
 }

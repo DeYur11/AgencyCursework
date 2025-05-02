@@ -3,14 +3,26 @@ package org.example.advertisingagency.service.material;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.dto.material.material.CreateMaterialInput;
+import org.example.advertisingagency.dto.material.material.MaterialPage;
+import org.example.advertisingagency.dto.material.material.PaginatedMaterialsInput;
 import org.example.advertisingagency.dto.material.material.UpdateMaterialInput;
+import org.example.advertisingagency.dto.project.PageInfo;
 import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.repository.*;
+import org.example.advertisingagency.specification.MaterialSpecifications;
+import org.example.advertisingagency.util.BatchLoaderUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -196,10 +208,94 @@ public class MaterialService {
         return id == null ? null : taskRepository.findById(id).orElse(null);
     }
 
-    public List<Keyword> getKeywordsForMaterial(Material material) {
-        return materialKeywordRepository.findByMaterial(material)
-                .stream()
-                .map(MaterialKeyword::getKeyword)
-                .collect(Collectors.toList());
+
+    public Map<Material, List<Keyword>> getKeywordsForMaterials(List<Material> materials) {
+        List<Integer> materialIds = materials.stream()
+                .map(Material::getId)
+                .distinct() // уникнути дублікатів
+                .toList();
+
+        List<MaterialKeyword> materialKeywords = BatchLoaderUtils.loadInBatches(
+                materialIds,
+                materialKeywordRepository::findByMaterialIdIn
+        );
+
+        Map<Integer, List<Keyword>> keywordsByMaterialId = materialKeywords.stream()
+                .collect(Collectors.groupingBy(
+                        mk -> mk.getMaterial().getId(),
+                        Collectors.mapping(MaterialKeyword::getKeyword, Collectors.toList())
+                ));
+
+        Map<Integer, Material> materialMap = materials.stream()
+                .collect(Collectors.toMap(
+                        Material::getId,
+                        Function.identity(),
+                        (a, b) -> a // уникнути duplicate key
+                ));
+
+        Map<Material, List<Keyword>> result = new LinkedHashMap<>();
+        for (Integer id : materialIds) {
+            Material material = materialMap.get(id);
+            result.put(material, keywordsByMaterialId.getOrDefault(id, List.of()));
+        }
+
+        return result;
     }
+
+
+    public Map<Material, List<MaterialReview>> getReviewsForMaterials(List<Material> materials) {
+        List<Integer> materialIds = materials.stream()
+                .map(Material::getId)
+                .distinct()
+                .toList();
+
+        List<MaterialReview> allReviews = BatchLoaderUtils.loadInBatches(
+                materialIds,
+                materialReviewRepository::findByMaterialIdIn
+        );
+
+        Map<Integer, List<MaterialReview>> reviewsByMaterialId = allReviews.stream()
+                .collect(Collectors.groupingBy(
+                        review -> review.getMaterial().getId()
+                ));
+
+        Map<Integer, Material> materialMap = materials.stream()
+                .collect(Collectors.toMap(
+                        Material::getId,
+                        Function.identity(),
+                        (a, b) -> a
+                ));
+
+        Map<Material, List<MaterialReview>> result = new LinkedHashMap<>();
+        for (Integer id : materialIds) {
+            Material material = materialMap.get(id);
+            result.put(material, reviewsByMaterialId.getOrDefault(id, List.of()));
+        }
+
+        return result;
+    }
+
+    public MaterialPage getPaginatedMaterials(PaginatedMaterialsInput input) {
+        Sort sort = (input.sortField() != null && input.sortDirection() != null)
+                ? Sort.by(Sort.Direction.valueOf(input.sortDirection().name()), input.sortField().name())
+                : Sort.unsorted();
+
+        PageRequest pageRequest = PageRequest.of(input.page(), input.size(), sort);
+        Specification<Material> spec = MaterialSpecifications.withFilters(input.filter());
+
+        Page<Material> page = materialRepository.findAll(spec, pageRequest);
+
+        PageInfo pageInfo = new PageInfo(
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.getSize(),
+                page.getNumber(),
+                page.isFirst(),
+                page.isLast(),
+                page.getNumberOfElements()
+        );
+
+        return new MaterialPage(page.getContent(), pageInfo);
+    }
+
 }

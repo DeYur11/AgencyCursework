@@ -11,7 +11,7 @@ import java.util.List;
 public interface MaterialKeywordRepository extends JpaRepository<MaterialKeyword, MaterialKeywordId> {
     List<MaterialKeyword> findByKeyword(Keyword keyword);
     List<MaterialKeyword> findByMaterial(Material material);
-
+    List<MaterialKeyword> findByMaterialIdIn(List<Integer> materialIds);
     void deleteByMaterialId(Integer id);
     void deleteAllByMaterialId(Integer materialId);
 }

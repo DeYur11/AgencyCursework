@@ -1,6 +1,10 @@
 package org.example.advertisingagency.repository;
 
 import org.example.advertisingagency.model.Material;
+import org.example.advertisingagency.model.Project;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -13,4 +17,5 @@ public interface MaterialRepository extends JpaRepository<Material, Integer> {
     List<Material> findAllByType_Id(Integer typeId);
     List<Material> findAllByUsageRestriction_Id(Integer usageRestrictionId);
     List<Material> findAllByTask_Id(Integer taskId);
+    Page<Material> findAll(Specification<Material> spec, Pageable pageable);
 }

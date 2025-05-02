@@ -65,4 +65,5 @@ type Query {
     servicesInProgressByProjectService(projectServiceId: ID!): [ServiceInProgress!]!
     paginatedProjects(input: PaginatedProjectsInput!): ProjectPage!
     workersByPosition(position: String!): [Worker!]!
+    paginatedMaterials(input: PaginatedMaterialsInput!): MaterialPage!
 }

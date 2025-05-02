@@ -1,0 +1,27 @@
+input PaginatedMaterialsInput {
+    page: Int!
+    size: Int!
+    sortField: MaterialSortField
+    sortDirection: SortDirection
+    filter: MaterialFilterInput
+}
+
+enum MaterialSortField {
+    name
+    createDatetime
+    status
+}
+
+input MaterialFilterInput {
+    nameContains: String
+    descriptionContains: String
+    statusIds: [Int!]
+    languageIds: [Int!]
+    typeIds: [Int!]
+    taskIds: [Int!]
+}
+
+type MaterialPage {
+    content: [Material!]!
+    pageInfo: PageInfo!
+}
