@@ -57,6 +57,6 @@ public class ServiceInProgressStatusService {
     }
 
     public List<ServicesInProgress> getServicesInProgressByStatus(Integer statusId) {
-        return servicesInProgressRepository.findAllByStatusID_Id(statusId);
+        return servicesInProgressRepository.findAllByStatus_Id(statusId);
     }
 }

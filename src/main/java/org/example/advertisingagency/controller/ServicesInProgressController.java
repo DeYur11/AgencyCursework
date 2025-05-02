@@ -68,12 +68,12 @@ public class ServicesInProgressController {
 
     @SchemaMapping(typeName = "ServiceInProgress", field = "status")
     public ServiceInProgressStatus getStatus(ServicesInProgress serviceInProgress) {
-        return serviceInProgress.getStatusID();
+        return serviceInProgress.getStatus();
     }
 
     @SchemaMapping(typeName = "ServiceInProgress", field = "projectService")
     public ProjectService getProjectService(ServicesInProgress serviceInProgress) {
-        return serviceInProgress.getProjectServiceID();
+        return serviceInProgress.getProjectService();
     }
 
     @BatchMapping(typeName = "ServiceInProgress", field = "tasks")
@@ -97,5 +97,10 @@ public class ServicesInProgressController {
                 ));
 
         return Mono.just(result);
+    }
+
+    @QueryMapping
+    public List<ServicesInProgress> servicesInProgressByProjectService(@Argument Integer projectServiceId) {
+        return servicesInProgressService.getServicesInProgressByProjectServiceId(projectServiceId);
     }
 }

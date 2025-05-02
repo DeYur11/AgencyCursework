@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Controller
@@ -71,8 +72,28 @@ public class ProjectServiceController {
 
         List<Service> services = BatchLoaderUtils.loadInBatches(serviceIds, serviceService::getServicesByIds);
 
+        Map<Integer, List<Service>> groupedById = services.stream()
+                .collect(Collectors.groupingBy(Service::getId));
+
+        Map<Integer, List<Service>> duplicates = groupedById.entrySet().stream()
+                .filter(e -> e.getValue().size() > 1)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (!duplicates.isEmpty()) {
+            System.out.println("🚨 Знайдено дублікати Service за ID:");
+            duplicates.forEach((id, list) -> {
+                System.out.println(" - ID: " + id + ", Кількість: " + list.size());
+                list.forEach(s -> System.out.println("   • " + s));
+            });
+        }
+
         Map<Integer, Service> serviceMap = services.stream()
-                .collect(Collectors.toMap(Service::getId, s -> s));
+                .collect(Collectors.toMap(
+                        Service::getId,
+                        Function.identity(),
+                        (a, b) -> a // залишає перший, або логіку злиття
+                ));
+
 
         Map<ProjectService, Service> result = projectServices.stream()
                 .collect(Collectors.toMap(
@@ -117,7 +138,7 @@ public class ProjectServiceController {
         );
 
         Map<Integer, List<ServicesInProgress>> grouped = servicesInProgress.stream()
-                .collect(Collectors.groupingBy(sip -> sip.getProjectServiceID().getId()));
+                .collect(Collectors.groupingBy(sip -> sip.getProjectService().getId()));
 
         Map<ProjectService, List<ServicesInProgress>> result = projectServices.stream()
                 .collect(Collectors.toMap(

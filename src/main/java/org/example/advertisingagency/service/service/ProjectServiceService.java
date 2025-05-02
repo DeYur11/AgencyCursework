@@ -85,7 +85,7 @@ public class ProjectServiceService {
     }
 
     public List<ServicesInProgress> getServicesInProgressByProjectService(Integer projectServiceId) {
-        return servicesInProgressRepository.findAllByProjectServiceID_Id(projectServiceId);
+        return servicesInProgressRepository.findAllByProjectService_Id(projectServiceId);
     }
 
     public List<ProjectService> getProjectServicesByProject(Integer projectId) {

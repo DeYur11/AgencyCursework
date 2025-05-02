@@ -31,11 +31,11 @@ public class ServicesInProgress {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "StatusID")
-    private ServiceInProgressStatus statusID;
+    private ServiceInProgressStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ProjectServiceID")
-    private ProjectService projectServiceID;
+    private ProjectService projectService;
 
     @NotNull
     @Column(name = "CreateDatetime", nullable = false)

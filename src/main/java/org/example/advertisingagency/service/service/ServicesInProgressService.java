@@ -44,10 +44,10 @@ public class ServicesInProgressService {
         services.setEndDate(input.getEndDate());
         services.setCost(input.getCost() != null ? BigDecimal.valueOf(input.getCost()) : null);
         if (input.getStatusId() != null) {
-            services.setStatusID(findStatus(input.getStatusId()));
+            services.setStatus(findStatus(input.getStatusId()));
         }
         if (input.getProjectServiceId() != null) {
-            services.setProjectServiceID(findProjectService(input.getProjectServiceId()));
+            services.setProjectService(findProjectService(input.getProjectServiceId()));
         }
         return servicesInProgressRepository.save(services);
     }
@@ -59,11 +59,16 @@ public class ServicesInProgressService {
         if (input.getStartDate() != null) services.setStartDate(input.getStartDate());
         if (input.getEndDate() != null) services.setEndDate(input.getEndDate());
         if (input.getCost() != null) services.setCost(BigDecimal.valueOf(input.getCost()));
-        if (input.getStatusId() != null) services.setStatusID(findStatus(input.getStatusId()));
-        if (input.getProjectServiceId() != null) services.setProjectServiceID(findProjectService(input.getProjectServiceId()));
+        if (input.getStatusId() != null) services.setStatus(findStatus(input.getStatusId()));
+        if (input.getProjectServiceId() != null) services.setProjectService(findProjectService(input.getProjectServiceId()));
 
         return servicesInProgressRepository.save(services);
     }
+
+    public List<ServicesInProgress> getServicesInProgressByProjectServiceId(Integer projectServiceId) {
+        return servicesInProgressRepository.findAllByProjectService_Id(projectServiceId);
+    }
+
 
     public boolean deleteServicesInProgress(Integer id) {
         if (!servicesInProgressRepository.existsById(id)) {
@@ -84,7 +89,7 @@ public class ServicesInProgressService {
     }
 
     public List<ServicesInProgress> getServicesInProgressByProjectServiceIds(List<Integer> projectServiceIds) {
-        return servicesInProgressRepository.findAllByProjectServiceID_IdIn(projectServiceIds);
+        return servicesInProgressRepository.findAllByProjectService_IdIn(projectServiceIds);
     }
 
 }

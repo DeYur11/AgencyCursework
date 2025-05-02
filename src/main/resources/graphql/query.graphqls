@@ -62,4 +62,5 @@ type Query {
     materialReview(id: ID!): MaterialReview
     materialReviews: [MaterialReview!]!
     reviewsByMaterial(materialId: ID!): [MaterialReview!]!
+    servicesInProgressByProjectService(projectServiceId: ID!): [ServiceInProgress!]!
 }
