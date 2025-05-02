@@ -1,13 +1,20 @@
 package org.example.advertisingagency.controller;
 
-import org.example.advertisingagency.dto.project.CreateProjectInput;
-import org.example.advertisingagency.dto.project.UpdateProjectInput;
+import org.example.advertisingagency.dto.PaginatedProjectsInput;
+import org.example.advertisingagency.dto.project.*;
 import org.example.advertisingagency.model.Payment;
 import org.example.advertisingagency.model.Project;
 import org.example.advertisingagency.model.ProjectService;
 import org.example.advertisingagency.repository.PaymentRepository;
+import org.example.advertisingagency.repository.ProjectRepository;
 import org.example.advertisingagency.service.service.ProjectServiceService;
+import org.example.advertisingagency.specification.ProjectSpecifications;
 import org.example.advertisingagency.util.BatchLoaderUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.graphql.data.method.annotation.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +31,13 @@ public class ProjectController {
     private final org.example.advertisingagency.service.project.ProjectService projectService;
     private final PaymentRepository paymentRepository;
     private final ProjectServiceService projectServiceService;
+    private final ProjectRepository projectRepository;
 
-    public ProjectController(org.example.advertisingagency.service.project.ProjectService projectService, PaymentRepository paymentRepository, ProjectServiceService projectServiceService) {
+    public ProjectController(org.example.advertisingagency.service.project.ProjectService projectService, PaymentRepository paymentRepository, ProjectServiceService projectServiceService, ProjectRepository projectRepository) {
         this.projectService = projectService;
         this.paymentRepository = paymentRepository;
         this.projectServiceService = projectServiceService;
+        this.projectRepository = projectRepository;
     }
 
     @QueryMapping
@@ -96,4 +105,31 @@ public class ProjectController {
     public List<Project> projectsByClient(@Argument Integer clientId) {
         return projectService.getProjectsByClient(clientId);
     }
+
+    @QueryMapping
+    public ProjectPage paginatedProjects(@Argument PaginatedProjectsInput input) {
+        Sort sort = (input.sortField() != null && input.sortDirection() != null)
+                ? Sort.by(Sort.Direction.valueOf(input.sortDirection().name()), input.sortField().name())
+                : Sort.unsorted();
+
+        PageRequest pageRequest = PageRequest.of(input.page(), input.size(), sort);
+
+        Specification<Project> spec = ProjectSpecifications.withFilters(ProjectFilterMapper.fromInput(input.filter()));
+
+        Page<Project> page = projectRepository.findAll(spec, pageRequest);
+
+        PageInfo pageInfo = new PageInfo(
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.getSize(),
+                page.getNumber(),
+                page.isFirst(),
+                page.isLast(),
+                page.getNumberOfElements()
+        );
+
+        return new ProjectPage(page.getContent(), pageInfo);
+    }
+
+
 }

@@ -1,0 +1,60 @@
+enum ProjectSortField {
+    name
+    cost
+    estimateCost
+    registrationDate
+    startDate
+    endDate
+    paymentDeadline
+}
+
+input ProjectFilterInput {
+    nameContains: String
+    descriptionContains: String
+    costMin: Float
+    costMax: Float
+    estimateCostMin: Float
+    estimateCostMax: Float
+    registrationDateFrom: String
+    registrationDateTo: String
+    startDateFrom: String
+    startDateTo: String
+    endDateFrom: String
+    endDateTo: String
+    paymentDeadlineFrom: String
+    paymentDeadlineTo: String
+    statusIds: [ID!]
+    projectTypeIds: [ID!]
+    clientIds: [ID!]
+    managerIds: [ID!]
+}
+
+
+enum SortDirection {
+    ASC
+    DESC
+}
+
+input PaginatedProjectsInput {
+    page: Int!
+    size: Int!
+    sortField: ProjectSortField
+    sortDirection: SortDirection
+    filter: ProjectFilterInput
+}
+
+
+type PageInfo {
+    totalElements: Int!
+    totalPages: Int!
+    size: Int!
+    number: Int!
+    first: Boolean!
+    last: Boolean!
+    numberOfElements: Int!
+}
+
+type ProjectPage {
+    content: [Project!]!
+    pageInfo: PageInfo!
+}

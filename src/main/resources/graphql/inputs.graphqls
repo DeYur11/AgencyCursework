@@ -30,14 +30,12 @@ input UpdateOfficeInput {
 
 # Client
 input CreateClientInput {
-    officeId: ID!
     name: String!
     email: String
     phoneNumber: String
 }
 
 input UpdateClientInput {
-    officeId: ID
     name: String
     email: String
     phoneNumber: String

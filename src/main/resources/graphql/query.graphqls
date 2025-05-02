@@ -63,4 +63,6 @@ type Query {
     materialReviews: [MaterialReview!]!
     reviewsByMaterial(materialId: ID!): [MaterialReview!]!
     servicesInProgressByProjectService(projectServiceId: ID!): [ServiceInProgress!]!
+    paginatedProjects(input: PaginatedProjectsInput!): ProjectPage!
+    workersByPosition(position: String!): [Worker!]!
 }

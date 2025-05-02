@@ -1,14 +1,23 @@
 package org.example.advertisingagency.service.project;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.Predicate;
 import org.example.advertisingagency.dto.project.CreateProjectInput;
+import org.example.advertisingagency.dto.project.ProjectFilterDTO;
+import org.example.advertisingagency.dto.project.ProjectSortDTO;
 import org.example.advertisingagency.dto.project.UpdateProjectInput;
 import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -64,7 +73,7 @@ public class ProjectService {
         Client client = clientRepository.findById(input.getClientId()).orElseThrow(() -> new RuntimeException("Client not found"));
         ProjectType projectType = projectTypeRepository.findById(input.getProjectTypeId()).orElseThrow(() -> new RuntimeException("ProjectType not found"));
         Worker manager = input.getManagerId() != null ? workerRepository.findById(input.getManagerId()).orElse(null) : null;
-
+        project.setStatus(projectStatusRepository.findByName("Not Started").orElse(null));
         project.setClient(client);
         project.setProjectType(projectType);
         project.setManager(manager);
@@ -124,5 +133,57 @@ public class ProjectService {
         return projectRepository.findAllByClient_Id(clientId);
     }
 
+    public Page<Project> getPaginatedProjects(
+            int page, int size,
+            ProjectFilterDTO filter,
+            List<ProjectSortDTO> sort
+    ) {
+        Pageable pageable = PageRequest.of(page, size, buildSort(sort));
+        Specification<Project> spec = buildSpecification(filter);
+        return projectRepository.findAll(spec, pageable);
+    }
+
+    private Sort buildSort(List<ProjectSortDTO> sortDTOs) {
+        if (sortDTOs == null || sortDTOs.isEmpty()) return Sort.unsorted();
+        List<Sort.Order> orders = sortDTOs.stream()
+                .map(dto -> new Sort.Order(
+                        Sort.Direction.fromString(dto.getDirection()),
+                        mapSortField(dto.getField())
+                ))
+                .toList();
+        return Sort.by(orders);
+    }
+
+    private String mapSortField(String field) {
+        return switch (field) {
+            case "NAME" -> "name";
+            case "startDate" -> "startDate";
+            case "COST" -> "cost";
+            default -> "id";
+        };
+    }
+
+    private Specification<Project> buildSpecification(ProjectFilterDTO filter) {
+        return (root, query, cb) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            if (filter.getNameContains() != null)
+                predicates.add(cb.like(cb.lower(root.get("name")), "%" + filter.getNameContains().toLowerCase() + "%"));
+
+            if (filter.getStatusId() != null)
+                predicates.add(cb.equal(root.get("status").get("id"), filter.getStatusId()));
+
+            if (filter.getClientId() != null)
+                predicates.add(cb.equal(root.get("client").get("id"), filter.getClientId()));
+
+            if (filter.getMinCost() != null)
+                predicates.add(cb.greaterThanOrEqualTo(root.get("cost"), filter.getMinCost()));
+
+            if (filter.getMaxCost() != null)
+                predicates.add(cb.lessThanOrEqualTo(root.get("cost"), filter.getMaxCost()));
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
 
 }

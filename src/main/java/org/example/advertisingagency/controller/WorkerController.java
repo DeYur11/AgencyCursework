@@ -7,6 +7,7 @@ import org.example.advertisingagency.model.Project;
 import org.example.advertisingagency.model.Task;
 import org.example.advertisingagency.model.Worker;
 import org.example.advertisingagency.repository.TaskRepository;
+import org.example.advertisingagency.repository.WorkerRepository;
 import org.example.advertisingagency.service.task.TaskService;
 import org.example.advertisingagency.service.user.WorkerService;
 import org.example.advertisingagency.util.BatchLoaderUtils;
@@ -27,12 +28,14 @@ public class WorkerController {
     private final WorkerService workerService;
     private final TaskRepository taskRepository;
     private final TaskService taskService;
+    private final WorkerRepository workerRepository;
 
     @Autowired
-    public WorkerController(WorkerService workerService, TaskRepository taskRepository, TaskService taskService) {
+    public WorkerController(WorkerService workerService, TaskRepository taskRepository, TaskService taskService, WorkerRepository workerRepository) {
         this.workerService = workerService;
         this.taskRepository = taskRepository;
         this.taskService = taskService;
+        this.workerRepository = workerRepository;
     }
 
     // ====== QUERY ======
@@ -108,5 +111,10 @@ public class WorkerController {
     @QueryMapping
     public List<Task> tasksByWorker(@Argument Integer workerId) {
         return taskService.getTasksByWorker(workerId);
+    }
+
+    @QueryMapping("workersByPosition")
+    public List<Worker> worker(@Argument String position) {
+        return workerRepository.findByPositionNameIgnoreCase(position);
     }
 }
