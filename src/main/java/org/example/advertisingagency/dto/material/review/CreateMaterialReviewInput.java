@@ -2,14 +2,12 @@ package org.example.advertisingagency.dto.material.review;
 
 import lombok.Data;
 
-import java.time.LocalDate;
-
 @Data
 public class CreateMaterialReviewInput {
     private Integer materialId;
     private Integer materialSummaryId;
     private String comments;
     private String suggestedChange;
-    private LocalDate reviewDate;
+    private String  reviewDate;
     private Integer reviewerId;
 }

@@ -100,15 +100,19 @@ input CreateProjectInput {
     managerId: ID
 }
 
-
 input UpdateProjectInput {
-    clientId: ID
-    projectTypeId: ID
-    projectStatusId: ID
-    name: String
+    clientId: ID!
+    projectTypeId: ID!
+    name: String!
     description: String
-    registrationDate: String
+    cost: Float
+    estimateCost: Float
+    paymentDeadline: String
+    managerId: ID
+    statusId: ID
 }
+
+
 
 # ServiceType
 input CreateServiceTypeInput {
@@ -221,15 +225,17 @@ input UpdatePaymentPurposeInput {
 input CreatePaymentInput {
     projectId: ID!
     paymentPurposeId: ID!
-    amount: Float!
+    paymentSum: Float!
     paymentDate: String!
+    transactionNumber: String!
 }
 
 input UpdatePaymentInput {
     projectId: ID
     paymentPurposeId: ID
-    amount: Float
+    paymentSum: Float
     paymentDate: String
+    transactionNumber: String!
 }
 
 # ServiceInProgressStatus
@@ -259,16 +265,18 @@ input CreateServiceInProgressInput {
     projectServiceId: ID!
     assignedWorkerId: ID!
     serviceInProgressStatusId: ID!
-    startDatetime: String!
-    endDatetime: String
+    startDate: String!
+    endDate: String
+    cost: Float
 }
 
 input UpdateServiceInProgressInput {
     projectServiceId: ID
     assignedWorkerId: ID
     serviceInProgressStatusId: ID
-    startDatetime: String
-    endDatetime: String
+    startDate: String
+    endDate: String
+    cost: Float
 }
 
 # Keyword
@@ -280,13 +288,17 @@ input UpdateKeywordInput {
     name: String
 }
 
-# Task
 input CreateTaskInput {
+    name: String!
+    description: String
+    deadline: String!
     serviceInProgressId: ID!
     assignedWorkerId: ID!
-    name: String!
-    deadline: String!
+    priority: Int
+    value: Float
 }
+
+
 
 input UpdateTaskInput {
     serviceInProgressId: ID
@@ -323,19 +335,23 @@ input UpdateMaterialInput {
     keywordIds: [ID!]
 }
 
-# MaterialReview
 input CreateMaterialReviewInput {
-    materialId: ID!
-    reviewerId: ID!
-    feedback: String
-    rating: Int
+    materialId: ID
+    materialSummaryId: ID
+    comments: String
+    suggestedChange: String
+    reviewDate: String
+    reviewerId: ID
 }
+
 
 input UpdateMaterialReviewInput {
+    id: ID!
     materialId: ID
+    materialSummaryId: ID
+    comments: String
+    suggestedChange: String
+    reviewDate: String
     reviewerId: ID
-    feedback: String
-    rating: Int
 }
-
 

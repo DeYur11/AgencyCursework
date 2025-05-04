@@ -38,7 +38,7 @@ public class MaterialReviewController {
 
     @MutationMapping
     @Transactional
-    public MaterialReview createMaterialReview(@Argument CreateMaterialReviewInput input) {
+    public MaterialReview createMaterialReview(@Argument("input") CreateMaterialReviewInput input) {
         return materialReviewService.createMaterialReview(input);
     }
 

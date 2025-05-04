@@ -108,7 +108,7 @@ type Mutation {
     updateMaterial(id: ID!, input: UpdateMaterialInput!): Material!
     deleteMaterial(id: ID!): Boolean!
 
-    createMaterialReview(input: CreateMaterialReviewInput!): MaterialReview!
+    createMaterialReview(input: CreateMaterialReviewInput): MaterialReview!
     updateMaterialReview(id: ID!, input: UpdateMaterialReviewInput!): MaterialReview!
     deleteMaterialReview(id: ID!): Boolean!
 }

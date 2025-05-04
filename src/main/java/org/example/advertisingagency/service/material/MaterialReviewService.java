@@ -13,6 +13,7 @@ import org.example.advertisingagency.repository.MaterialSummaryRepository;
 import org.example.advertisingagency.repository.WorkerRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,7 +52,7 @@ public class MaterialReviewService {
         }
         review.setComments(input.getComments());
         review.setSuggestedChange(input.getSuggestedChange());
-        review.setReviewDate(input.getReviewDate());
+        review.setReviewDate(LocalDate.parse(input.getReviewDate()));
         if (input.getReviewerId() != null) {
             review.setReviewer(findWorker(input.getReviewerId()));
         }

@@ -43,8 +43,8 @@ public class PaymentService {
     public Payment createPayment(CreatePaymentInput input) {
         Payment payment = new Payment();
         payment.setTransactionNumber(input.getTransactionNumber());
-        payment.setPaymentSum(BigDecimal.valueOf(input.getSum()));
-        payment.setPaymentDate(input.getDate());
+        payment.setPaymentSum(BigDecimal.valueOf(input.getPaymentSum()));
+        payment.setPaymentDate(input.getPaymentDate());
         payment.setProject(projectService.getProjectById(input.getProjectId()));
         if (input.getPaymentPurposeId() != null) {
             payment.setPaymentPurpose(paymentPurposeService.getPaymentPurposeById(input.getPaymentPurposeId()));
@@ -57,8 +57,8 @@ public class PaymentService {
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found with id: " + id));
 
         if (input.getTransactionNumber() != null) payment.setTransactionNumber(input.getTransactionNumber());
-        if (input.getSum() != null) payment.setPaymentSum(BigDecimal.valueOf(input.getSum()));
-        if (input.getDate() != null) payment.setPaymentDate(input.getDate());
+        if (input.getPaymentSum() != null) payment.setPaymentSum(BigDecimal.valueOf(input.getPaymentSum()));
+        if (input.getPaymentDate() != null) payment.setPaymentDate(input.getPaymentDate());
         if (input.getProjectId() != null) payment.setProject(projectService.getProjectById(input.getProjectId()));
         if (input.getPaymentPurposeId() != null) payment.setPaymentPurpose(paymentPurposeService.getPaymentPurposeById(input.getPaymentPurposeId()));
 

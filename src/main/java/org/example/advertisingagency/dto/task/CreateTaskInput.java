@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
+// TODO Зробити так, щоб всі завдання при додаванні мали статус не почато, але мали дедлайн, потім працівник натискає кнопку
+
 @Data
 public class CreateTaskInput {
     private String name;
