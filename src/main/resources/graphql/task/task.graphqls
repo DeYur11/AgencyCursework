@@ -2,7 +2,7 @@ type Task {
     id: ID!
     name: String!
     description: String
-    startDate: String!
+    startDate: String
     endDate: String
     deadline: String
     serviceInProgress: ServiceInProgress
@@ -13,4 +13,44 @@ type Task {
     createDatetime: String!
     updateDatetime: String
     materials: [Material!]
+}
+
+enum TaskSortField  { NAME PRIORITY STATUS DEADLINE START_DATE END_DATE CREATE_DATETIME }
+input TaskFilterInput {
+    nameContains:          String
+    descriptionContains:   String
+    priorityIn:            [Int!]
+    statusIds:             [Int!]
+    createdFrom:           String   # ISO-date
+    createdTo:             String
+    startDateFrom:         String
+    startDateTo:           String
+    endDateFrom:           String
+    endDateTo:             String
+    deadlineFrom:          String
+    deadlineTo:            String
+    serviceInProgressIds:  [ID!]
+}
+
+input PaginatedTasksInput {
+    page:          Int!
+    size:          Int!
+    sortField:     TaskSortField
+    sortDirection: SortDirection
+    filter:        TaskFilterInput
+}
+
+type TaskPage  {
+    content:   [Task!]!
+    pageInfo:  PageInfo!
+}
+
+extend type Query {
+    paginatedTasks(input: PaginatedTasksInput!): TaskPage!
+    paginatedTasksByWorker(workerId: ID!, input: PaginatedTasksInput!): TaskPage!
+}
+
+input TransitionTaskStatusInput {
+    taskId: Int!
+    event: String! # Наприклад: "START", "COMPLETE", "CANCEL"
 }

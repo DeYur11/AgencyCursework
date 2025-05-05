@@ -301,10 +301,13 @@ input CreateTaskInput {
 
 
 input UpdateTaskInput {
-    serviceInProgressId: ID
-    assignedWorkerId: ID
-    name: String
-    deadline: String
+    name: String!
+    description: String
+    deadline: String!
+    assignedWorkerId: ID!
+    priority: Int
+    value: Float
+    taskStatusId: ID!
 }
 
 # Material

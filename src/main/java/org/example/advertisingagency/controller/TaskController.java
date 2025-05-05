@@ -1,11 +1,13 @@
 package org.example.advertisingagency.controller;
 
-import org.example.advertisingagency.dto.task.CreateTaskInput;
-import org.example.advertisingagency.dto.task.UpdateTaskInput;
+import org.example.advertisingagency.dto.project.PageInfo;
+import org.example.advertisingagency.dto.task.*;
+import org.example.advertisingagency.enums.TaskEvent;
 import org.example.advertisingagency.model.Material;
 import org.example.advertisingagency.model.Task;
 import org.example.advertisingagency.service.material.MaterialService;
 import org.example.advertisingagency.service.task.TaskService;
+import org.springframework.data.domain.Page;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -57,5 +59,43 @@ public class TaskController {
     @SchemaMapping(typeName = "Task", field = "materials")
     public List<Material> getMaterials(Task task) {
         return materialService.getMaterialsByTask(task.getId());
+    }
+
+    @QueryMapping
+    public TaskPage paginatedTasksByWorker(@Argument int workerId,
+                                           @Argument PaginatedTasksInput input) {
+        Page<Task> page = taskService.findTasksByWorker(workerId, input);
+        return new TaskPage(page.getContent(), toPageInfo(page));
+    }
+
+    @QueryMapping
+    public TaskPage paginatedTasks(@Argument PaginatedTasksInput input) {
+        Page<Task> page = taskService.findTasks(input);
+        return new TaskPage(page.getContent(), toPageInfo(page));
+    }
+
+    private PageInfo toPageInfo(Page<Task> page) {
+        return new PageInfo(
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.getSize(),
+                page.getNumber(),
+                page.isFirst(),
+                page.isLast(),
+                page.getNumberOfElements()
+        );
+    }
+
+    @MutationMapping
+    @Transactional
+    public Task transitionTaskStatus(@Argument TransitionTaskStatusInput input) {
+        TaskEvent event;
+        try {
+            event = TaskEvent.valueOf(input.event().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid task event: " + input.event());
+        }
+
+        return taskService.updateTaskStatus(input.taskId(), event);
     }
 }
