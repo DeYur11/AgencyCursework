@@ -41,15 +41,18 @@ public class JwtTokenService {
         String positionName = worker.getPosition().getName(); // або безпечніше: Optional
 
         return Jwts.builder()
-                .setSubject(worker.getId().toString()) // sub
+                .setIssuer(ISSUER)
+                .setSubject(worker.getId().toString())
                 .claim("username", account.getUsername())
                 .claim("name", worker.getName())
                 .claim("surname", worker.getSurname())
                 .claim("role", positionName)
                 .claim("isReviewer", worker.getIsReviewer())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 1 день
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
+                .signWith(key, SignatureAlgorithm.HS256) // ✅ ОБОВʼЯЗКОВО
                 .compact();
+
     }
 
 
