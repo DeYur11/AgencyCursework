@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class WorkerService {
@@ -43,6 +44,10 @@ public class WorkerService {
 
     public Worker getWorkerById(Integer id) {
         return workerRepository.findById(id).orElse(null);
+    }
+
+    public Optional<Worker> getOptionalWorker(Integer id) {
+        return workerRepository.findById(id);
     }
 
     public Worker createWorker(CreateWorkerInput input) {
