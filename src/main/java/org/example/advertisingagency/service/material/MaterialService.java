@@ -84,7 +84,6 @@ public class MaterialService {
         material.setName(input.getName());
         material.setDescription(input.getDescription());
         material.setCreateDatetime(Instant.now());
-
         material.setType(findMaterialType(input.getMaterialTypeId()));
         material.setStatus(materialStatusRepository.findByName(STARTING_STATUS).orElse(null));
         material.setUsageRestriction(findUsageRestriction(input.getUsageRestrictionId()));

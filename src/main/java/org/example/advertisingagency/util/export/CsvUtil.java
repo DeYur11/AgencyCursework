@@ -1,17 +1,34 @@
 package org.example.advertisingagency.util.export;
 
-import org.example.advertisingagency.model.Material;
+import org.example.advertisingagency.dto.export.ExportMaterialDTO;
 
 import java.util.List;
 
 public class CsvUtil {
-    public static String convertToCsv(List<Material> materials) {
-        StringBuilder sb = new StringBuilder("Name,Description,Status\n");
-        for (Material m : materials) {
-            sb.append("\"").append(m.getName()).append("\",")
-                    .append("\"").append(m.getDescription()).append("\",")
-                    .append(m.getStatus()).append("\n");
+
+    public static String convertToCsv(List<ExportMaterialDTO> materials) {
+        StringBuilder sb = new StringBuilder(
+                "ID,Name,Description,Type,Language,LicenceType,TargetAudience,UsageRestriction,CreatedBy,CreateDatetime\n"
+        );
+
+        for (ExportMaterialDTO m : materials) {
+            sb.append(m.id()).append(",")
+                    .append(csvEscape(m.name())).append(",")
+                    .append(csvEscape(m.description())).append(",")
+                    .append(csvEscape(m.type())).append(",")
+                    .append(csvEscape(m.language())).append(",")
+                    .append(csvEscape(m.licenceType())).append(",")
+                    .append(csvEscape(m.targetAudience())).append(",")
+                    .append(csvEscape(m.usageRestriction())).append(",")
+                    .append(csvEscape(String.valueOf(m.createdBy()))).append(",")
+                    .append(m.createDatetime()).append("\n");
         }
+
         return sb.toString();
+    }
+
+    private static String csvEscape(String value) {
+        if (value == null) return "";
+        return "\"" + value.replace("\"", "\"\"") + "\"";
     }
 }

@@ -10,9 +10,9 @@ import org.springframework.statemachine.config.builders.StateMachineTransitionCo
 
 import java.util.EnumSet;
 
+import static org.example.advertisingagency.enums.ServiceEvent.EMPTY;
 import static org.example.advertisingagency.enums.ServiceEvent.START;
-import static org.example.advertisingagency.enums.ServiceStatusType.COMPLETED;
-import static org.example.advertisingagency.enums.ServiceStatusType.IN_PROGRESS;
+import static org.example.advertisingagency.enums.ServiceStatusType.*;
 
 @Configuration
 @EnableStateMachine(name = "serviceInProgressStateMachine")
@@ -44,6 +44,10 @@ public class ServiceInProgressStateMachineConfig
                 .and()
                 .withExternal().source(COMPLETED).target(IN_PROGRESS).event(ServiceEvent.REOPEN)
                 .and()
-                .withExternal().source(COMPLETED).target(IN_PROGRESS).event(START);
+                .withExternal().source(COMPLETED).target(IN_PROGRESS).event(START)
+                .and()
+                .withExternal().source(IN_PROGRESS).target(NOT_STARTED).event(EMPTY)
+                .and()
+                .withExternal().source(COMPLETED).target(NOT_STARTED).event(EMPTY);
     }
 }

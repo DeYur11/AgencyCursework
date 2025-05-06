@@ -52,7 +52,7 @@ public class MaterialReviewService {
         }
         review.setComments(input.getComments());
         review.setSuggestedChange(input.getSuggestedChange());
-        review.setReviewDate(LocalDate.parse(input.getReviewDate()));
+        review.setReviewDate(LocalDate.now());
         if (input.getReviewerId() != null) {
             review.setReviewer(findWorker(input.getReviewerId()));
         }

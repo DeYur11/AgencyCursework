@@ -45,4 +45,7 @@ public class ProjectService {
     protected void onUpdate() {
         updateDatetime = OffsetDateTime.now().toInstant();
     }
+
+    @OneToMany(mappedBy = "projectService", fetch = FetchType.LAZY)
+    private java.util.List<ServicesInProgress> servicesInProgress;
 }

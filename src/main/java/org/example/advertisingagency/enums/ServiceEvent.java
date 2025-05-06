@@ -4,7 +4,8 @@ public enum ServiceEvent {
     START,
     COMPLETE,
     CANCEL,
-    REOPEN
+    REOPEN,
+    EMPTY
 }
 
 

@@ -33,13 +33,29 @@ public class ProjectWorkflowService {
     public void updateProjectStatusIfNeeded(Integer projectId) {
         List<ProjectService> projectServices = projectServiceRepository.findAllByProject_Id(projectId);
 
-        if (projectServices.isEmpty()) return;
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + projectId));
+
+
+
+        ProjectStatusType newStatus;
+        if (projectServices.isEmpty()) {
+            return;
+        };
 
         List<ServicesInProgress> allServices = sipRepository.findAllByProjectService_IdIn(
                 projectServices.stream().map(ProjectService::getId).toList()
         );
 
-        if (allServices.isEmpty()) return;
+        if (allServices.isEmpty()){
+            newStatus = ProjectStatusType.NOT_STARTED;
+            String dbStatus = ProjectStatusType.toDb(newStatus);
+            var statusEntity = projectStatusRepository.findByName(dbStatus)
+                    .orElseThrow(() -> new EntityNotFoundException("ProjectStatus not found: " + dbStatus));
+            project.setStatus(statusEntity);
+            projectRepository.save(project);
+            return;
+        };
 
         boolean allCompleted = allServices.stream()
                 .allMatch(s -> s.getStatus().getName().equalsIgnoreCase("Completed"));
@@ -53,7 +69,6 @@ public class ProjectWorkflowService {
                     return name.equals("in progress") || name.equals("on hold");
                 });
 
-        ProjectStatusType newStatus;
         if (allCompleted) {
             newStatus = ProjectStatusType.COMPLETED;
         } else if (allNotStarted) {
@@ -64,11 +79,10 @@ public class ProjectWorkflowService {
             return; // No change or unsupported scenario
         }
 
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + projectId));
+
+
 
         String dbStatus = ProjectStatusType.toDb(newStatus);
-
         if (!project.getStatus().getName().equalsIgnoreCase(dbStatus)) {
             var statusEntity = projectStatusRepository.findByName(dbStatus)
                     .orElseThrow(() -> new EntityNotFoundException("ProjectStatus not found: " + dbStatus));

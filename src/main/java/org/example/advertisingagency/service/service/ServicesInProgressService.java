@@ -9,6 +9,8 @@ import org.example.advertisingagency.model.ServicesInProgress;
 import org.example.advertisingagency.repository.ProjectServiceRepository;
 import org.example.advertisingagency.repository.ServiceInProgressStatusRepository;
 import org.example.advertisingagency.repository.ServicesInProgressRepository;
+import org.example.advertisingagency.util.state_machine.service.ProjectWorkflowService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -20,13 +22,15 @@ public class ServicesInProgressService {
     private final ServicesInProgressRepository servicesInProgressRepository;
     private final ServiceInProgressStatusRepository serviceInProgressStatusRepository;
     private final ProjectServiceRepository projectServiceRepository;
+    private final ProjectWorkflowService projectWorkflowService;
 
     public ServicesInProgressService(ServicesInProgressRepository servicesInProgressRepository,
                                      ServiceInProgressStatusRepository serviceInProgressStatusRepository,
-                                     ProjectServiceRepository projectServiceRepository) {
+                                     ProjectServiceRepository projectServiceRepository, ProjectWorkflowService projectWorkflowService) {
         this.servicesInProgressRepository = servicesInProgressRepository;
         this.serviceInProgressStatusRepository = serviceInProgressStatusRepository;
         this.projectServiceRepository = projectServiceRepository;
+        this.projectWorkflowService = projectWorkflowService;
     }
 
     public ServicesInProgress getServicesInProgressById(Integer id) {
@@ -46,7 +50,14 @@ public class ServicesInProgressService {
         if (input.getProjectServiceId() != null) {
             services.setProjectService(findProjectService(input.getProjectServiceId()));
         }
-        return servicesInProgressRepository.save(services);
+        ServicesInProgress saved = servicesInProgressRepository.save(services);
+
+        // ► оновлюємо статус проєкту
+        if (saved.getProjectService() != null) {
+            Integer projectId = saved.getProjectService().getProject().getId();
+            projectWorkflowService.updateProjectStatusIfNeeded(projectId);
+        }
+        return saved;
     }
 
     public ServicesInProgress updateServicesInProgress(Integer id, UpdateServicesInProgressInput input) {
@@ -59,7 +70,13 @@ public class ServicesInProgressService {
         if (input.getStatusId() != null) services.setStatus(findStatus(input.getStatusId()));
         if (input.getProjectServiceId() != null) services.setProjectService(findProjectService(input.getProjectServiceId()));
 
-        return servicesInProgressRepository.save(services);
+        ServicesInProgress saved = servicesInProgressRepository.save(services);
+
+        if (saved.getProjectService() != null) {
+            Integer projectId = saved.getProjectService().getProject().getId();
+            projectWorkflowService.updateProjectStatusIfNeeded(projectId);
+        }
+        return saved;
     }
 
     public List<ServicesInProgress> getServicesInProgressByProjectServiceId(Integer projectServiceId) {
@@ -68,12 +85,19 @@ public class ServicesInProgressService {
 
 
     public boolean deleteServicesInProgress(Integer id) {
-        if (!servicesInProgressRepository.existsById(id)) {
-            return false;
-        }
-        servicesInProgressRepository.deleteById(id);
-        return true;
+        return servicesInProgressRepository.findById(id).map(service -> {
+            Integer projectId = service.getProjectService().getProject().getId();
+            try {
+                servicesInProgressRepository.deleteById(id);
+                projectWorkflowService.updateProjectStatusIfNeeded(projectId);
+                return true;
+
+            } catch (DataIntegrityViolationException e) {
+                return false;
+            }
+        }).orElse(false);
     }
+
 
     private ServiceInProgressStatus findStatus(Integer id) {
         return serviceInProgressStatusRepository.findById(id)

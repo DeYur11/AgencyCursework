@@ -3,6 +3,7 @@ package org.example.advertisingagency.util;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.schema.DataFetchingEnvironment;
+import org.example.advertisingagency.exception.InvalidMaterialState;
 import org.example.advertisingagency.exception.InvalidStateTransitionException;
 import org.springframework.graphql.execution.DataFetcherExceptionResolver;
 import org.springframework.graphql.execution.ErrorType;
@@ -24,8 +25,14 @@ public class GraphQLExceptionResolver implements DataFetcherExceptionResolver {
                             .errorType(ErrorType.BAD_REQUEST)
                             .build())
             );
+        }else if (exception instanceof InvalidMaterialState){
+            return Mono.just(
+                    Collections.singletonList(GraphqlErrorBuilder.newError(environment)
+                            .message(exception.getMessage())
+                            .errorType(ErrorType.BAD_REQUEST)
+                            .build())
+            );
         }
-
         return Mono.empty(); // не обробляємо — передаємо далі
     }
 }

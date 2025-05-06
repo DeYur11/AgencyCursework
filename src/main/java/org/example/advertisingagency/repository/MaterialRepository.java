@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -19,5 +20,6 @@ public interface MaterialRepository extends JpaRepository<Material, Integer> {
     List<Material> findAllByUsageRestriction_Id(Integer usageRestrictionId);
     List<Material> findAllByTask_Id(Integer taskId);
     Page<Material> findAll(Specification<Material> spec, Pageable pageable);
+    @EntityGraph(attributePaths = {"type", "language", "licenceType"})
     List<Material> findAll(Specification<Material> spec, Sort sort);
 }

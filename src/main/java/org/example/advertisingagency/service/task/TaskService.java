@@ -80,7 +80,6 @@ public class TaskService {
 
         Task saved = taskRepository.save(task);
 
-        // 🔁 Каскадне оновлення: якщо нове завдання прив'язане — оновлюємо сервіс/проєкт
         if (saved.getServiceInProgress() != null) {
             serviceInProgressWorkflowService.updateServiceStatusIfNeeded(saved.getServiceInProgress().getId());
         }
@@ -138,7 +137,9 @@ public class TaskService {
         if (!taskRepository.existsById(id)) {
             return false;
         }
+        Integer serviceInpProgressId = taskRepository.findById(id).get().getServiceInProgress().getId();
         taskRepository.deleteById(id);
+        serviceInProgressWorkflowService.updateServiceStatusIfNeeded(serviceInpProgressId);
         return true;
     }
 

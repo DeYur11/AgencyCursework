@@ -26,6 +26,7 @@ public class TaskWorkflowService {
     private final MaterialRepository materialRepository;
     private final ServicesInProgressRepository sipRepository;
     private final ServiceInProgressStatusRepository serviceStatusRepository;
+    private final ProjectWorkflowService projectWorkflowService;
 
     public TaskWorkflowService(
             @Qualifier("taskStateMachine") StateMachine<TaskStatusType, TaskEvent> stateMachine,
@@ -33,14 +34,15 @@ public class TaskWorkflowService {
             TaskStatusRepository taskStatusRepository,
             MaterialRepository materialRepository,
             ServicesInProgressRepository sipRepository,
-            ServiceInProgressStatusRepository serviceStatusRepository
-    ) {
+            ServiceInProgressStatusRepository serviceStatusRepository,
+            ProjectWorkflowService projectWorkflowService) {
         this.stateMachine = stateMachine;
         this.taskRepository = taskRepository;
         this.taskStatusRepository = taskStatusRepository;
         this.materialRepository = materialRepository;
         this.sipRepository = sipRepository;
         this.serviceStatusRepository = serviceStatusRepository;
+        this.projectWorkflowService = projectWorkflowService;
     }
 
     @Transactional
@@ -123,5 +125,6 @@ public class TaskWorkflowService {
             sip.setStatus(statusEntity);
             sipRepository.save(sip);
         }
+        projectWorkflowService.updateProjectStatusIfNeeded(sip.getProjectService().getProject().getId());
     }
 }

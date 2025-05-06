@@ -63,8 +63,8 @@ public class ServiceInProgressWorkflowService {
         sip.setStatus(statusEntity);
         ServicesInProgress updated = sipRepository.save(sip);
 
-        projectWorkflowService.updateProjectStatusIfNeeded(sip.getProjectService().getProject().getId());
 
+        projectWorkflowService.updateProjectStatusIfNeeded(sip.getProjectService().getProject().getId());
         return updated;
     }
 
@@ -74,8 +74,10 @@ public class ServiceInProgressWorkflowService {
                 .orElseThrow(() -> new EntityNotFoundException("ServiceInProgress not found"));
 
         var tasks = taskRepository.findAllByServiceInProgress_Id(serviceId);
-        if (tasks == null || tasks.isEmpty()) return;
-
+        if (tasks == null || tasks.isEmpty()) {
+            transition(serviceId, ServiceEvent.EMPTY);
+            return;
+        }
         boolean allCompleted = tasks.stream()
                 .allMatch(task -> task.getTaskStatus().getName().equalsIgnoreCase("Completed"));
 
@@ -100,7 +102,6 @@ public class ServiceInProgressWorkflowService {
             transition(serviceId, ServiceEvent.START);
 
         } else if (current == ServiceStatusType.COMPLETED && hasAnyNotCompleted) {
-            // ⬅️ основна перевірка: якщо додали нове завдання або оновили статус назад
             transition(serviceId, ServiceEvent.REOPEN);
         }
     }
