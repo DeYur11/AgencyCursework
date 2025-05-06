@@ -21,8 +21,6 @@ input TaskFilterInput {
     descriptionContains:   String
     priorityIn:            [Int!]
     statusIds:             [Int!]
-    createdFrom:           String   # ISO-date
-    createdTo:             String
     startDateFrom:         String
     startDateTo:           String
     endDateFrom:           String

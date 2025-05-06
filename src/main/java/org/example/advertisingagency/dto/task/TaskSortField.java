@@ -13,7 +13,8 @@ public enum TaskSortField {
     PRIORITY("priority"),
     VALUE("value"),
     CREATE_DATETIME("createDatetime"),
-    UPDATE_DATETIME("updateDatetime");
+    UPDATE_DATETIME("updateDatetime"),
+    STATUS("taskStatus");
 
     private final String fieldName;
 

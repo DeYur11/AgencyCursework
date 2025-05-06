@@ -8,5 +8,9 @@ public record MaterialFilterInput(
         List<Integer> statusIds,
         List<Integer> languageIds,
         List<Integer> typeIds,
-        List<Integer> taskIds
+        List<Integer> taskIds,
+        List<Integer> keywordIds,
+        List<Integer> usageRestrictionIds,   // ✅ Додано
+        List<Integer> licenceTypeIds,        // ✅ Додано
+        List<Integer> targetAudienceIds      // ✅ Додано
 ) {}

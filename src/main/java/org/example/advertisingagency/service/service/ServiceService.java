@@ -37,7 +37,6 @@ public class ServiceService {
 
     public Service createService(CreateServiceInput input) {
         Service service = new Service();
-        service.setDuration(input.getDuration());
         service.setEstimateCost(input.getEstimateCost() != null ? BigDecimal.valueOf(input.getEstimateCost()) : null);
         service.setServiceType(findServiceType(input.getTypeId()));
         service.setServiceName(input.getServiceName());
@@ -48,7 +47,6 @@ public class ServiceService {
         Service service = serviceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Service not found with id: " + id));
 
-        if (input.getDuration() != null) service.setDuration(input.getDuration());
         if (input.getEstimateCost() != null) service.setEstimateCost(BigDecimal.valueOf(input.getEstimateCost()));
         if (input.getTypeId() != null) service.setServiceType(findServiceType(input.getTypeId()));
         if (input.getServiceName() != null) service.setServiceName(input.getServiceName());

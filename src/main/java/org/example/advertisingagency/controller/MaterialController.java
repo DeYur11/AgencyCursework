@@ -1,14 +1,13 @@
 package org.example.advertisingagency.controller;
 
-import org.example.advertisingagency.dto.material.material.CreateMaterialInput;
-import org.example.advertisingagency.dto.material.material.MaterialPage;
-import org.example.advertisingagency.dto.material.material.PaginatedMaterialsInput;
-import org.example.advertisingagency.dto.material.material.UpdateMaterialInput;
+import org.example.advertisingagency.dto.material.material.*;
+import org.example.advertisingagency.enums.ExportedFile;
 import org.example.advertisingagency.model.Keyword;
 import org.example.advertisingagency.model.Material;
 import org.example.advertisingagency.model.MaterialKeyword;
 import org.example.advertisingagency.model.MaterialReview;
 import org.example.advertisingagency.repository.MaterialKeywordRepository;
+import org.example.advertisingagency.service.material.MaterialExportService;
 import org.example.advertisingagency.service.material.MaterialService;
 import org.example.advertisingagency.util.BatchLoaderUtils;
 import org.springframework.graphql.data.method.annotation.*;
@@ -25,10 +24,12 @@ public class MaterialController {
 
     private final MaterialService materialService;
     private final MaterialKeywordRepository materialKeywordRepository;
+    private final MaterialExportService materialExportService;
 
-    public MaterialController(MaterialService materialService, MaterialKeywordRepository materialKeywordRepository) {
+    public MaterialController(MaterialService materialService, MaterialKeywordRepository materialKeywordRepository, MaterialExportService materialExportService) {
         this.materialService = materialService;
         this.materialKeywordRepository = materialKeywordRepository;
+        this.materialExportService = materialExportService;
     }
 
     @QueryMapping
@@ -82,4 +83,8 @@ public class MaterialController {
         return materialService.getPaginatedMaterials(input);
     }
 
+    @QueryMapping
+    public ExportedFile exportMaterials(@Argument ExportMaterialsInput input) {
+        return materialExportService.exportMaterials(input);
+    }
 }

@@ -1,0 +1,21 @@
+enum ExportFormat {
+    JSON
+    CSV
+}
+
+input ExportMaterialsInput {
+    sortField: MaterialSortField
+    sortDirection: SortDirection
+    filter: MaterialFilterInput
+    format: ExportFormat!
+}
+
+type ExportedFile {
+    downloadUrl: String!
+    filename: String!
+    format: ExportFormat!
+}
+
+extend type Query {
+    exportMaterials(input: ExportMaterialsInput!): ExportedFile!
+}

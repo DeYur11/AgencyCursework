@@ -1,7 +1,9 @@
 package org.example.advertisingagency.specification;
 
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import org.example.advertisingagency.dto.material.material.MaterialFilterInput;
+import org.example.advertisingagency.model.Keyword;
 import org.example.advertisingagency.model.Material;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -35,6 +37,24 @@ public class MaterialSpecifications {
 
             if (filter.taskIds() != null && !filter.taskIds().isEmpty()) {
                 predicate = cb.and(predicate, root.get("task").get("id").in(filter.taskIds()));
+            }
+
+            if (filter.keywordIds() != null && !filter.keywordIds().isEmpty()) {
+                Join<Material, Keyword> keywordJoin = root.join("keywords");
+                predicate = cb.and(predicate, keywordJoin.get("id").in(filter.keywordIds()));
+                query.distinct(true);
+            }
+
+            if (filter.usageRestrictionIds() != null && !filter.usageRestrictionIds().isEmpty()) {
+                predicate = cb.and(predicate, root.get("usageRestriction").get("id").in(filter.usageRestrictionIds()));
+            }
+
+            if (filter.licenceTypeIds() != null && !filter.licenceTypeIds().isEmpty()) {
+                predicate = cb.and(predicate, root.get("licenceType").get("id").in(filter.licenceTypeIds()));
+            }
+
+            if (filter.targetAudienceIds() != null && !filter.targetAudienceIds().isEmpty()) {
+                predicate = cb.and(predicate, root.get("targetAudience").get("id").in(filter.targetAudienceIds()));
             }
 
             return predicate;

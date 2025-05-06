@@ -263,12 +263,10 @@ input UpdateProjectServiceInput {
 # ServiceInProgress
 input CreateServiceInProgressInput {
     projectServiceId: ID!
-    assignedWorkerId: ID!
-    serviceInProgressStatusId: ID!
     startDate: String!
-    endDate: String
     cost: Float
 }
+
 
 input UpdateServiceInProgressInput {
     projectServiceId: ID

@@ -1,6 +1,5 @@
 type Service {
     id: ID!
-    duration: Int
     estimateCost:   Float
     serviceType: ServiceType!
     serviceName: String

@@ -15,10 +15,14 @@ enum MaterialSortField {
 input MaterialFilterInput {
     nameContains: String
     descriptionContains: String
-    statusIds: [Int!]
-    languageIds: [Int!]
-    typeIds: [Int!]
-    taskIds: [Int!]
+    statusIds: [ID!]
+    languageIds: [ID!]
+    typeIds: [ID!]
+    taskIds: [ID!]
+    keywordIds: [ID!]
+    usageRestrictionIds: [ID!]          # ✅ Нове поле
+    licenceTypeIds: [ID!]              # ✅ Нове поле
+    targetAudienceIds: [ID!]           # ✅ Нове поле
 }
 
 type MaterialPage {

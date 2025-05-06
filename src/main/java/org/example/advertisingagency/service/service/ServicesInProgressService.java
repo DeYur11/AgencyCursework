@@ -41,11 +41,8 @@ public class ServicesInProgressService {
     public ServicesInProgress createServicesInProgress(CreateServicesInProgressInput input) {
         ServicesInProgress services = new ServicesInProgress();
         services.setStartDate(input.getStartDate());
-        services.setEndDate(input.getEndDate());
         services.setCost(input.getCost() != null ? BigDecimal.valueOf(input.getCost()) : null);
-        if (input.getStatusId() != null) {
-            services.setStatus(findStatus(input.getStatusId()));
-        }
+        services.setStatus(findStatus(1));
         if (input.getProjectServiceId() != null) {
             services.setProjectService(findProjectService(input.getProjectServiceId()));
         }

@@ -16,7 +16,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -190,7 +193,30 @@ public class TaskService {
         return taskRepository.findAll(spec, PageRequest.of(in.page(), in.size(), sort));
     }
 
+    @Transactional
     public Task updateTaskStatus(Integer taskId, TaskEvent event) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + taskId));
+
+        switch (event) {
+            case START -> {
+                if (task.getStartDate() == null) {
+                    task.setStartDate(Instant.from(Instant.now()));
+                    taskRepository.save(task);
+                }
+            }
+            case COMPLETE -> {
+                task.setEndDate(Instant.now());
+                taskRepository.save(task);
+            }
+            case RESUME -> {
+                if (task.getEndDate() != null) {
+                    task.setEndDate(null);
+                    taskRepository.save(task);
+                }
+            }
+        }
+
         return taskWorkflowService.transition(taskId, event);
     }
 }

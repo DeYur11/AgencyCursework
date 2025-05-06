@@ -6,9 +6,7 @@ import java.time.LocalDate;
 
 @Data
 public class CreateServicesInProgressInput {
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private Double cost;
-    private Integer statusId;
     private Integer projectServiceId;
+    private LocalDate startDate;
+    private Double cost;
 }

@@ -21,9 +21,6 @@ public class Service {
     @Column(name = "ServiceID", nullable = false)
     private Integer id;
 
-    @Column(name = "Duration")
-    private Integer duration;
-
     @Column(name = "EstimateCost", precision = 10, scale = 2)
     private BigDecimal estimateCost;
 
