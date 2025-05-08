@@ -3,16 +3,25 @@ package org.example.advertisingagency.service.material;
 import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.dto.material.review.CreateMaterialReviewInput;
 import org.example.advertisingagency.dto.material.review.UpdateMaterialReviewInput;
+import org.example.advertisingagency.event.AuditLogEvent;
 import org.example.advertisingagency.model.Material;
 import org.example.advertisingagency.model.MaterialReview;
 import org.example.advertisingagency.model.MaterialSummary;
 import org.example.advertisingagency.model.Worker;
+import org.example.advertisingagency.model.auth.AuditAction;
+import org.example.advertisingagency.model.auth.AuditEntity;
+import org.example.advertisingagency.model.auth.AuditLog;
 import org.example.advertisingagency.repository.MaterialRepository;
 import org.example.advertisingagency.repository.MaterialReviewRepository;
 import org.example.advertisingagency.repository.MaterialSummaryRepository;
 import org.example.advertisingagency.repository.WorkerRepository;
+import org.example.advertisingagency.service.logs.AuditLogService;
+import org.example.advertisingagency.service.auth.UserContextHolder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -20,11 +29,13 @@ import java.util.Optional;
 @Service
 public class MaterialReviewService {
 
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     private final MaterialReviewRepository materialReviewRepository;
     private final MaterialRepository materialRepository;
     private final MaterialSummaryRepository materialSummaryRepository;
     private final WorkerRepository workerRepository;
-
     public MaterialReviewService(MaterialReviewRepository materialReviewRepository,
                                  MaterialRepository materialRepository,
                                  MaterialSummaryRepository materialSummaryRepository,
@@ -56,7 +67,12 @@ public class MaterialReviewService {
         if (input.getReviewerId() != null) {
             review.setReviewer(findWorker(input.getReviewerId()));
         }
-        return materialReviewRepository.save(review);
+
+        MaterialReview saved = materialReviewRepository.save(review);
+
+        logAction(AuditAction.CREATE, saved);
+
+        return saved;
     }
 
     public MaterialReview updateMaterialReview(Integer id, UpdateMaterialReviewInput input) {
@@ -81,14 +97,25 @@ public class MaterialReviewService {
         if (input.getReviewerId() != null) {
             review.setReviewer(findWorker(input.getReviewerId()));
         }
-        return materialReviewRepository.save(review);
+
+        MaterialReview saved = materialReviewRepository.save(review);
+
+        logAction(AuditAction.UPDATE, saved);
+
+        return saved;
     }
 
     public boolean deleteMaterialReview(Integer id) {
-        if (!materialReviewRepository.existsById(id)) {
+        Optional<MaterialReview> opt = materialReviewRepository.findById(id);
+        if (opt.isEmpty()) {
             return false;
         }
+
+        MaterialReview review = opt.get();
         materialReviewRepository.deleteById(id);
+
+        logAction(AuditAction.DELETE, review);
+
         return true;
     }
 
@@ -110,5 +137,40 @@ public class MaterialReviewService {
     public List<MaterialReview> getReviewsByMaterial(Integer materialId) {
         return Optional.ofNullable(materialReviewRepository.findAllByMaterial_Id(materialId))
                 .orElse(List.of());
+    }
+
+    private void logAction(AuditAction action, MaterialReview review) {
+        var user = UserContextHolder.get();
+
+        AuditLog log = AuditLog.builder()
+                .workerId(user.getWorkerId())
+                .username(user.getUsername())
+                .role(user.getRole())
+                .action(action)
+                .entity(AuditEntity.MATERIAL_REVIEW)
+                .description("MaterialReview " + action + ": " + review.getComments())
+                .projectId(null)
+                .taskId(review.getMaterial() != null && review.getMaterial().getTask() != null
+                        ? review.getMaterial().getTask().getId()
+                        : null)
+                .materialId(review.getMaterial() != null ? review.getMaterial().getId() : null)
+                .timestamp(Instant.now())
+                .build();
+
+        // Вивід у консоль
+        System.out.println("=== AUDIT LOG OBJECT ===");
+        System.out.println("Worker: " + log.getWorkerId() + " (" + log.getUsername() + ", " + log.getRole() + ")");
+        System.out.println("Action: " + log.getAction());
+        System.out.println("Entity: " + log.getEntity());
+        System.out.println("Description: " + log.getDescription());
+        System.out.println("Project ID: " + log.getProjectId());
+        System.out.println("Task ID: " + log.getTaskId());
+        System.out.println("Material ID: " + log.getMaterialId());
+        System.out.println("Timestamp: " + log.getTimestamp());
+        System.out.println("=========================");
+
+        eventPublisher.publishEvent(
+                new AuditLogEvent(this, log)
+        );
     }
 }

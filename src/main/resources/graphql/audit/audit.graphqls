@@ -1,0 +1,33 @@
+enum AuditAction {
+    CREATE
+    UPDATE
+    DELETE
+}
+
+enum AuditEntity {
+    PROJECT
+    MATERIAL
+    TASK
+    MATERIAL_REVIEW
+}
+
+type AuditLog {
+    id: ID
+    worker: Worker!
+    username: String
+    role: String
+    action: AuditAction!
+    entity: AuditEntity!
+    description: String
+    project: Project
+    task: Task
+    material: Material
+    timestamp: String
+}
+
+extend type Query {
+    auditLogsByProjectIds(projectIds: [Int!]!): [AuditLog!]!
+    auditLogsByMaterialIds(materialIds: [Int!]!): [AuditLog!]!
+    auditLogsForTasks(limit: Int = 20): [AuditLog!]!
+}
+

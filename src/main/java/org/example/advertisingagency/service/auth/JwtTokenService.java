@@ -5,7 +5,6 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.example.advertisingagency.model.Worker;
 import org.example.advertisingagency.model.WorkerAccount;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -35,10 +34,9 @@ public class JwtTokenService {
             "Scrum Master", "SCRUM_MASTER"
     );
 
-
     public String generateToken(WorkerAccount account) {
-        Worker worker = account.getWorker(); // getter, який повертає Worker
-        String positionName = worker.getPosition().getName(); // або безпечніше: Optional
+        Worker worker = account.getWorker();
+        String positionName = worker.getPosition().getName();
 
         return Jwts.builder()
                 .setIssuer(ISSUER)
@@ -46,16 +44,13 @@ public class JwtTokenService {
                 .claim("username", account.getUsername())
                 .claim("name", worker.getName())
                 .claim("surname", worker.getSurname())
-                .claim("role", positionName)
+                .claim("role", positionToRoleMap.get(positionName))
                 .claim("isReviewer", worker.getIsReviewer())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
-                .signWith(key, SignatureAlgorithm.HS256) // ✅ ОБОВʼЯЗКОВО
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
-
     }
-
-
 
     public boolean validateToken(String token) {
         try {
@@ -83,5 +78,14 @@ public class JwtTokenService {
                 .getBody();
         return claims.get("username", String.class);
     }
-}
 
+    // ✅ Додано метод для витягування ролі
+    public String extractRole(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("role", String.class);
+    }
+}

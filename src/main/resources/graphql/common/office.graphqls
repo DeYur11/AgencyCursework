@@ -1,8 +1,0 @@
-type Office {
-    id: ID!
-    street: String
-    city: City!
-    createDatetime: String!
-    updateDatetime: String
-    workers: [Worker!]
-}

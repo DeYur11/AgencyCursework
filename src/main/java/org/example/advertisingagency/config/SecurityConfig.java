@@ -36,10 +36,10 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authz -> authz
-                       // .requestMatchers("/**").permitAll()
+                        .requestMatchers("/**").permitAll()
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/graphiql/**").permitAll()
-                      //  .requestMatchers("/graphql/**").permitAll()
+                        .requestMatchers("/graphql/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

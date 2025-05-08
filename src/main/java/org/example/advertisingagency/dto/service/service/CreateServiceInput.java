@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class CreateServiceInput {
     private Double estimateCost;
-    private Integer typeId;
+    private Integer serviceTypeId;
     private String serviceName;
 }

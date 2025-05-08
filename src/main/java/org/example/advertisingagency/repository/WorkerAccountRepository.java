@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface WorkerAccountRepository extends JpaRepository<WorkerAccount, Integer> {
     Optional<WorkerAccount> findByUsernameIgnoreCase(String username);
+    Boolean existsByUsernameIgnoreCase(String username);
+    Optional<WorkerAccount> findByWorker_Id(Integer workerId);
 }

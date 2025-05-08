@@ -27,7 +27,7 @@ public class WorkerAccount {
     private Integer id;
 
     @NotNull
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "WorkerID", nullable = false)
     private Worker worker;

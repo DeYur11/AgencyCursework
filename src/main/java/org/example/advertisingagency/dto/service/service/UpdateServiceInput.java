@@ -6,6 +6,6 @@ import lombok.Data;
 public class UpdateServiceInput {
     private Integer duration;
     private Double estimateCost;
-    private Integer typeId;
+    private Integer serviceTypeId;
     private String serviceName;
 }

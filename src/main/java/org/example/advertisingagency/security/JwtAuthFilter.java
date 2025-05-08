@@ -5,7 +5,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.advertisingagency.model.WorkerAccount;
+import org.example.advertisingagency.model.auth.AuthenticatedUserContext;
 import org.example.advertisingagency.service.auth.JwtTokenService;
+import org.example.advertisingagency.service.auth.UserContextHolder;
 import org.example.advertisingagency.service.auth.WorkerAccountService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -50,16 +52,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         Integer workerId = jwtTokenService.extractWorkerId(jwtToken);
-        Optional<WorkerAccount> accountOpt = workerAccountService.findWorkerById(workerId);
+        Optional<WorkerAccount> accountOpt = workerAccountService.findAccountByWorkerId(workerId);
 
         if (accountOpt.isPresent() && SecurityContextHolder.getContext().getAuthentication() == null) {
             WorkerAccount account = accountOpt.get();
 
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    account, null, List.of()  // You can add roles here if needed
+                    account, null, List.of()
             );
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            String role = jwtTokenService.extractRole(jwtToken); // або з position.getName()
+            UserContextHolder.set(new AuthenticatedUserContext(
+                    account.getWorker().getId(),
+                    account.getUsername(),
+                    role
+            ));
         }
 
         filterChain.doFilter(request, response);
