@@ -1,4 +1,4 @@
-package org.example.advertisingagency.model.auth;
+package org.example.advertisingagency.model.log;
 
 public enum AuditAction {
     CREATE,

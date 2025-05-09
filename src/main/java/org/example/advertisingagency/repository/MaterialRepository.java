@@ -8,6 +8,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -22,4 +24,12 @@ public interface MaterialRepository extends JpaRepository<Material, Integer> {
     Page<Material> findAll(Specification<Material> spec, Pageable pageable);
     @EntityGraph(attributePaths = {"type", "language", "licenceType"})
     List<Material> findAll(Specification<Material> spec, Sort sort);
+
+    @Query("""
+    SELECT m
+    FROM Material m
+    WHERE m.task.assignedWorker.id = :workerId
+""")
+    List<Material> findAllByAssignedWorkerId(@Param("workerId") Integer workerId);
+
 }

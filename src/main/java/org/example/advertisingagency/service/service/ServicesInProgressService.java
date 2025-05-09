@@ -3,17 +3,25 @@ package org.example.advertisingagency.service.service;
 import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.dto.service.servicesinprogress.CreateServicesInProgressInput;
 import org.example.advertisingagency.dto.service.servicesinprogress.UpdateServicesInProgressInput;
+import org.example.advertisingagency.event.AuditLogEvent;
 import org.example.advertisingagency.model.ProjectService;
 import org.example.advertisingagency.model.ServiceInProgressStatus;
 import org.example.advertisingagency.model.ServicesInProgress;
+import org.example.advertisingagency.model.log.AuditAction;
+import org.example.advertisingagency.model.log.AuditEntity;
+import org.example.advertisingagency.model.log.AuditLog;
 import org.example.advertisingagency.repository.ProjectServiceRepository;
 import org.example.advertisingagency.repository.ServiceInProgressStatusRepository;
 import org.example.advertisingagency.repository.ServicesInProgressRepository;
+import org.example.advertisingagency.service.auth.UserContextHolder;
 import org.example.advertisingagency.util.state_machine.service.ProjectWorkflowService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -23,14 +31,17 @@ public class ServicesInProgressService {
     private final ServiceInProgressStatusRepository serviceInProgressStatusRepository;
     private final ProjectServiceRepository projectServiceRepository;
     private final ProjectWorkflowService projectWorkflowService;
+    private final ApplicationEventPublisher eventPublisher;
 
+    @Autowired
     public ServicesInProgressService(ServicesInProgressRepository servicesInProgressRepository,
                                      ServiceInProgressStatusRepository serviceInProgressStatusRepository,
-                                     ProjectServiceRepository projectServiceRepository, ProjectWorkflowService projectWorkflowService) {
+                                     ProjectServiceRepository projectServiceRepository, ProjectWorkflowService projectWorkflowService, ApplicationEventPublisher eventPublisher) {
         this.servicesInProgressRepository = servicesInProgressRepository;
         this.serviceInProgressStatusRepository = serviceInProgressStatusRepository;
         this.projectServiceRepository = projectServiceRepository;
         this.projectWorkflowService = projectWorkflowService;
+        this.eventPublisher = eventPublisher;
     }
 
     public ServicesInProgress getServicesInProgressById(Integer id) {
@@ -57,6 +68,7 @@ public class ServicesInProgressService {
             Integer projectId = saved.getProjectService().getProject().getId();
             projectWorkflowService.updateProjectStatusIfNeeded(projectId);
         }
+        logAction(AuditAction.CREATE, saved);
         return saved;
     }
 
@@ -76,6 +88,7 @@ public class ServicesInProgressService {
             Integer projectId = saved.getProjectService().getProject().getId();
             projectWorkflowService.updateProjectStatusIfNeeded(projectId);
         }
+        logAction(AuditAction.UPDATE, saved);
         return saved;
     }
 
@@ -89,6 +102,7 @@ public class ServicesInProgressService {
             Integer projectId = service.getProjectService().getProject().getId();
             try {
                 servicesInProgressRepository.deleteById(id);
+                logAction(AuditAction.DELETE, service);
                 projectWorkflowService.updateProjectStatusIfNeeded(projectId);
                 return true;
 
@@ -113,4 +127,30 @@ public class ServicesInProgressService {
         return servicesInProgressRepository.findAllByProjectService_IdIn(projectServiceIds);
     }
 
+    private void logAction(AuditAction action, ServicesInProgress services) {
+        var user = UserContextHolder.get();
+
+        AuditLog log = AuditLog.builder()
+                .workerId(user.getWorkerId())
+                .username(user.getUsername())
+                .role(user.getRole())
+                .action(action)
+                .entity(AuditEntity.SERVICES_IN_PROGRESS)
+                .description("ServicesInProgress " + action + ": " +
+                        (services.getProjectService() != null
+                                ? "Проєкт-сервіс ID: " + services.getProjectService().getId()
+                                : "Без прив'язки"))
+                .projectId(services.getProjectService() != null &&
+                        services.getProjectService().getProject() != null
+                        ? services.getProjectService().getProject().getId()
+                        : null)
+                .serviceInProgressId(services.getId())
+                .taskId(null)
+                .materialId(null)
+                .materialReviewId(null)
+                .timestamp(Instant.now())
+                .build();
+
+        eventPublisher.publishEvent(new AuditLogEvent(this, log));
+    }
 }

@@ -1,4 +1,4 @@
-package org.example.advertisingagency.model.auth;
+package org.example.advertisingagency.model.log;
 
 import jakarta.persistence.Id;
 import lombok.Builder;
@@ -25,7 +25,9 @@ public class AuditLog {
 
     private String description;
     private Integer projectId;
+    private Integer serviceInProgressId;
     private Integer taskId;
     private Integer materialId;
+    private Integer materialReviewId;
     private Instant timestamp;
 }

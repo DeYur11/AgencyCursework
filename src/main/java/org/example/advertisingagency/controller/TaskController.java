@@ -44,6 +44,11 @@ public class TaskController {
         return taskService.createTask(input);
     }
 
+    @QueryMapping
+    public List<Task> activeProjectTasks() {
+        return taskService.getTasksFromActiveProjects();
+    }
+
     @MutationMapping
     @Transactional
     public Task updateTask(@Argument Integer id, @Argument UpdateTaskInput input) {
@@ -67,6 +72,8 @@ public class TaskController {
         Page<Task> page = taskService.findTasksByWorker(workerId, input);
         return new TaskPage(page.getContent(), toPageInfo(page));
     }
+
+
 
     @QueryMapping
     public TaskPage paginatedTasks(@Argument PaginatedTasksInput input) {

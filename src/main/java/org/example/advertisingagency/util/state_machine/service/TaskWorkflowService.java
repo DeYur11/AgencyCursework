@@ -15,6 +15,7 @@ import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -64,6 +65,12 @@ public class TaskWorkflowService {
         }
 
         TaskStatusType newStatus = stateMachine.getState().getId();
+
+        switch (newStatus) {
+            case COMPLETED: task.setEndDate(Instant.now());
+            case IN_PROGRESS: task.setStartDate(Instant.now());
+        }
+
         String newStatusName = TaskStatusType.toDb(newStatus);
 
         TaskStatus statusEntity = taskStatusRepository.findByName(newStatusName)

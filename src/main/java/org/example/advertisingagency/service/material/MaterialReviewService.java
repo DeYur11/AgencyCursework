@@ -8,15 +8,16 @@ import org.example.advertisingagency.model.Material;
 import org.example.advertisingagency.model.MaterialReview;
 import org.example.advertisingagency.model.MaterialSummary;
 import org.example.advertisingagency.model.Worker;
-import org.example.advertisingagency.model.auth.AuditAction;
-import org.example.advertisingagency.model.auth.AuditEntity;
-import org.example.advertisingagency.model.auth.AuditLog;
+import org.example.advertisingagency.model.log.AuditAction;
+import org.example.advertisingagency.model.log.AuditEntity;
+import org.example.advertisingagency.model.log.AuditLog;
 import org.example.advertisingagency.repository.MaterialRepository;
 import org.example.advertisingagency.repository.MaterialReviewRepository;
 import org.example.advertisingagency.repository.MaterialSummaryRepository;
 import org.example.advertisingagency.repository.WorkerRepository;
-import org.example.advertisingagency.service.logs.AuditLogService;
 import org.example.advertisingagency.service.auth.UserContextHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ import java.util.Optional;
 @Service
 public class MaterialReviewService {
 
+    private static final Logger log = LoggerFactory.getLogger(MaterialReviewService.class);
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
@@ -101,7 +103,6 @@ public class MaterialReviewService {
         MaterialReview saved = materialReviewRepository.save(review);
 
         logAction(AuditAction.UPDATE, saved);
-
         return saved;
     }
 
@@ -115,7 +116,6 @@ public class MaterialReviewService {
         materialReviewRepository.deleteById(id);
 
         logAction(AuditAction.DELETE, review);
-
         return true;
     }
 
@@ -149,26 +149,25 @@ public class MaterialReviewService {
                 .action(action)
                 .entity(AuditEntity.MATERIAL_REVIEW)
                 .description("MaterialReview " + action + ": " + review.getComments())
-                .projectId(null)
+                .projectId(review.getMaterial()
+                        .getTask()
+                        .getServiceInProgress()
+                        .getProjectService()
+                        .getProject()
+                        .getId()
+                )
+                .serviceInProgressId(review.getMaterial()
+                        .getTask()
+                        .getServiceInProgress().getId())
                 .taskId(review.getMaterial() != null && review.getMaterial().getTask() != null
                         ? review.getMaterial().getTask().getId()
                         : null)
                 .materialId(review.getMaterial() != null ? review.getMaterial().getId() : null)
+                .materialReviewId(review.getId())
                 .timestamp(Instant.now())
                 .build();
 
-        // Вивід у консоль
-        System.out.println("=== AUDIT LOG OBJECT ===");
-        System.out.println("Worker: " + log.getWorkerId() + " (" + log.getUsername() + ", " + log.getRole() + ")");
-        System.out.println("Action: " + log.getAction());
-        System.out.println("Entity: " + log.getEntity());
-        System.out.println("Description: " + log.getDescription());
-        System.out.println("Project ID: " + log.getProjectId());
-        System.out.println("Task ID: " + log.getTaskId());
-        System.out.println("Material ID: " + log.getMaterialId());
-        System.out.println("Timestamp: " + log.getTimestamp());
-        System.out.println("=========================");
-
+        MaterialReviewService.log.info("Registered action with review: {} With action: {}", review.getId(), log.getAction());
         eventPublisher.publishEvent(
                 new AuditLogEvent(this, log)
         );

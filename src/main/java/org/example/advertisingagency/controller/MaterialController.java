@@ -87,4 +87,9 @@ public class MaterialController {
     public ExportedFile exportMaterials(@Argument ExportMaterialsInput input) {
         return materialExportService.exportMaterials(input);
     }
+
+    @QueryMapping
+    public List<Material> materialsByWorker(@Argument Integer workerId) {
+        return materialService.getMaterialsByWorkerId(workerId);
+    }
 }

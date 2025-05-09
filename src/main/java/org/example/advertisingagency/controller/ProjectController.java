@@ -102,6 +102,11 @@ public class ProjectController {
     }
 
     @QueryMapping
+    public List<Project> projectsByManager(@Argument Integer managerId) {
+        return projectService.getProjectByProjectManager(managerId);
+    }
+
+    @QueryMapping
     public List<Project> projectsByClient(@Argument Integer clientId) {
         return projectService.getProjectsByClient(clientId);
     }

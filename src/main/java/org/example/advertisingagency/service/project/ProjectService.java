@@ -52,6 +52,10 @@ public class ProjectService {
                 .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
     }
 
+    public List<Project> getProjectByProjectManager(Integer projectManagerId) {
+        return projectRepository.findAllByManager_Id(projectManagerId);
+    }
+
     public List<Project> getAllProjects() {
         return projectRepository.findAll();
     }

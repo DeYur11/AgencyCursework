@@ -66,4 +66,7 @@ type Query {
     paginatedProjects(input: PaginatedProjectsInput!): ProjectPage!
     workersByPosition(position: String!): [Worker!]!
     paginatedMaterials(input: PaginatedMaterialsInput!): MaterialPage!
+    materialsByWorker(workerId: ID!): [Material!]!
+    activeProjectTasks: [Task!]!
+    projectsByManager(managerId: ID!): [Project]!
 }

@@ -7,10 +7,16 @@ import org.example.advertisingagency.dto.material.material.MaterialPage;
 import org.example.advertisingagency.dto.material.material.PaginatedMaterialsInput;
 import org.example.advertisingagency.dto.material.material.UpdateMaterialInput;
 import org.example.advertisingagency.dto.project.PageInfo;
+import org.example.advertisingagency.event.AuditLogEvent;
 import org.example.advertisingagency.model.*;
+import org.example.advertisingagency.model.log.AuditAction;
+import org.example.advertisingagency.model.log.AuditEntity;
+import org.example.advertisingagency.model.log.AuditLog;
 import org.example.advertisingagency.repository.*;
+import org.example.advertisingagency.service.auth.UserContextHolder;
 import org.example.advertisingagency.specification.MaterialSpecifications;
 import org.example.advertisingagency.util.BatchLoaderUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -40,6 +46,7 @@ public class MaterialService {
     private final LanguageRepository languageRepository;
     private final TaskRepository taskRepository;
     private final MaterialReviewRepository materialReviewRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final KeywordRepository keywordRepository;
 
     public MaterialService(MaterialRepository materialRepository,
@@ -50,7 +57,7 @@ public class MaterialService {
                            LicenceTypeRepository licenceTypeRepository,
                            TargetAudienceRepository targetAudienceRepository,
                            LanguageRepository languageRepository,
-                           TaskRepository taskRepository, MaterialReviewRepository materialReviewRepository, KeywordRepository keywordRepository) {
+                           TaskRepository taskRepository, MaterialReviewRepository materialReviewRepository, ApplicationEventPublisher eventPublisher, KeywordRepository keywordRepository) {
         this.materialRepository = materialRepository;
         this.materialKeywordRepository = materialKeywordRepository;
         this.materialTypeRepository = materialTypeRepository;
@@ -61,6 +68,7 @@ public class MaterialService {
         this.languageRepository = languageRepository;
         this.taskRepository = taskRepository;
         this.materialReviewRepository = materialReviewRepository;
+        this.eventPublisher = eventPublisher;
         this.keywordRepository = keywordRepository;
     }
 
@@ -110,7 +118,7 @@ public class MaterialService {
             }
         }
 
-
+        logMaterialAction(AuditAction.CREATE, material);
         return material;
     }
 
@@ -155,7 +163,7 @@ public class MaterialService {
                 }
             }
         }
-
+        logMaterialAction(AuditAction.UPDATE, material);
         return material;
     }
 
@@ -166,10 +174,10 @@ public class MaterialService {
             return false;
         }
 
-        // Спочатку видаляємо залежності
         materialKeywordRepository.deleteByMaterialId(id);
-
-        // Потім видаляємо сам матеріал
+        Material material = materialRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Material not found with id: " + id));
+        logMaterialAction(AuditAction.DELETE, material);
         materialRepository.deleteById(id);
         return true;
     }
@@ -295,6 +303,39 @@ public class MaterialService {
         );
 
         return new MaterialPage(page.getContent(), pageInfo);
+    }
+
+    public List<Material> getMaterialsByWorkerId(Integer workerId) {
+        return materialRepository.findAllByAssignedWorkerId(workerId);
+    }
+
+    private void logMaterialAction(AuditAction action, Material material) {
+        var user = UserContextHolder.get();
+
+        AuditLog log = AuditLog.builder()
+                .workerId(user.getWorkerId())
+                .username(user.getUsername())
+                .role(user.getRole())
+                .action(action)
+                .entity(AuditEntity.MATERIAL)
+                .description("Material " + action + ": " + material.getName())
+                .projectId(material.getTask() != null &&
+                        material.getTask().getServiceInProgress() != null &&
+                        material.getTask().getServiceInProgress().getProjectService() != null &&
+                        material.getTask().getServiceInProgress().getProjectService().getProject() != null
+                        ? material.getTask().getServiceInProgress().getProjectService().getProject().getId()
+                        : null)
+                .serviceInProgressId(material.getTask() != null &&
+                        material.getTask().getServiceInProgress() != null
+                        ? material.getTask().getServiceInProgress().getId():
+                        null)
+                .taskId(material.getTask() != null ? material.getTask().getId() : null)
+                .materialId(material.getId())
+                .materialReviewId(null)
+                .timestamp(Instant.now())
+                .build();
+
+        eventPublisher.publishEvent(new AuditLogEvent(this, log));
     }
 
 }

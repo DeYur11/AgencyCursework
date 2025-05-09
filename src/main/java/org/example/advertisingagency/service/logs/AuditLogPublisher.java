@@ -1,7 +1,7 @@
 package org.example.advertisingagency.service.logs;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.advertisingagency.model.auth.AuditLog;
+import org.example.advertisingagency.model.log.AuditLog;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
