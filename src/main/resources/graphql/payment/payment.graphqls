@@ -1,0 +1,10 @@
+type Payment {
+    id: ID!
+    transactionNumber: String!
+    paymentSum: Float!
+    paymentDate: String
+    project: Project!
+    paymentPurpose: PaymentPurpose
+    createDatetime: String!
+    updateDatetime: String
+}

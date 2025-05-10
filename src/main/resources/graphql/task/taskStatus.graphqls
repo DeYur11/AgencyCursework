@@ -1,0 +1,7 @@
+type TaskStatus {
+    id: ID!
+    name: String
+    createDatetime: String!
+    updateDatetime: String
+    tasks: [Task!]
+}

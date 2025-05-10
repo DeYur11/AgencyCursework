@@ -1,0 +1,7 @@
+type TargetAudience {
+    id: ID!
+    name: String
+    createDatetime: String!
+    updateDatetime: String
+    materials: [Material!]
+}

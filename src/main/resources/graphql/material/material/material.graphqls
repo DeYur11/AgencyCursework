@@ -1,0 +1,16 @@
+type Material {
+    id: ID!
+    type: MaterialType
+    name: String!
+    status: MaterialStatus
+    description: String
+    usageRestriction: UsageRestriction
+    licenceType: LicenceType
+    targetAudience: TargetAudience
+    language: Language
+    task: Task
+    createDatetime: String!
+    updateDatetime: String
+    keywords: [Keyword!]
+    reviews: [MaterialReview!]
+}

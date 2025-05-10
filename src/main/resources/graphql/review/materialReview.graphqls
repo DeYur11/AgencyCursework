@@ -1,0 +1,11 @@
+type MaterialReview {
+    id: ID!
+    material: Material!
+    materialSummary: MaterialSummary
+    comments: String
+    suggestedChange: String
+    reviewDate: String
+    reviewer: Worker
+    createDatetime: String!
+    updateDatetime: String
+}

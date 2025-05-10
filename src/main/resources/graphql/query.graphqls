@@ -1,0 +1,72 @@
+type Query {
+    country(id: ID!): Country
+    countries: [Country!]!
+    city(id: ID!): City
+    cities: [City!]!
+    citiesByCountry(countryId: ID!): [City!]!
+    office(id: ID!): Office
+    offices: [Office!]!
+    client(id: ID!): Client
+    clients: [Client!]!
+    position(id: ID!): Position
+    positions: [Position!]!
+    worker(id: ID!): Worker
+    workers: [Worker!]!
+    projectType(id: ID!): ProjectType
+    projectTypes: [ProjectType!]!
+    projectStatus(id: ID!): ProjectStatus
+    projectStatuses: [ProjectStatus!]!
+    project(id: ID!): Project
+    projects: [Project!]!
+    projectsByClient(clientId: ID!): [Project!]!
+    serviceType(id: ID!): ServiceType
+    serviceTypes: [ServiceType!]!
+    service(id: ID!): Service
+    services: [Service!]!
+    materialType(id: ID!): MaterialType
+    materialTypes: [MaterialType!]!
+    materialStatus(id: ID!): MaterialStatus
+    materialStatuses: [MaterialStatus!]!
+    usageRestriction(id: ID!): UsageRestriction
+    usageRestrictions: [UsageRestriction!]!
+    licenceType(id: ID!): LicenceType
+    licenceTypes: [LicenceType!]!
+    targetAudience(id: ID!): TargetAudience
+    targetAudiences: [TargetAudience!]!
+    language(id: ID!): Language
+    languages: [Language!]!
+    taskStatus(id: ID!): TaskStatus
+    taskStatuses: [TaskStatus!]!
+    materialSummary(id: ID!): MaterialSummary
+    materialSummaries: [MaterialSummary!]!
+    paymentPurpose(id: ID!): PaymentPurpose
+    paymentPurposes: [PaymentPurpose!]!
+    payment(id: ID!): Payment
+    payments: [Payment!]!
+    paymentsByProject(projectId: ID!): [Payment!]!
+    serviceInProgressStatus(id: ID!): ServiceInProgressStatus
+    serviceInProgressStatuses: [ServiceInProgressStatus!]!
+    projectService(id: ID!): ProjectService
+    projectServices: [ProjectService!]!
+    projectServicesByProject(projectId: ID!): [ProjectService!]!
+    serviceInProgress(id: ID!): ServiceInProgress
+    servicesInProgress: [ServiceInProgress!]!
+    keyword(id: ID!): Keyword
+    keywords: [Keyword!]!
+    task(id: ID!): Task
+    tasks: [Task!]!
+    tasksByWorker(workerId: ID!): [Task!]!
+    material(id: ID!): Material
+    materials: [Material!]!
+    materialsByTask(taskId: ID!): [Material!]!
+    materialReview(id: ID!): MaterialReview
+    materialReviews: [MaterialReview!]!
+    reviewsByMaterial(materialId: ID!): [MaterialReview!]!
+    servicesInProgressByProjectService(projectServiceId: ID!): [ServiceInProgress!]!
+    paginatedProjects(input: PaginatedProjectsInput!): ProjectPage!
+    workersByPosition(position: String!): [Worker!]!
+    paginatedMaterials(input: PaginatedMaterialsInput!): MaterialPage!
+    materialsByWorker(workerId: ID!): [Material!]!
+    activeProjectTasks: [Task!]!
+    projectsByManager(managerId: ID!): [Project]!
+}

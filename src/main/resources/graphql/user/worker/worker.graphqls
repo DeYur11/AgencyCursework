@@ -1,0 +1,16 @@
+type Worker {
+    id: ID!
+    name: String!
+    surname: String!
+    email: String!
+    phoneNumber: String
+    position: Position!
+    office: Office!
+    isReviewer: Boolean!
+    createDatetime: String!
+    updateDatetime: String
+    managedProjects: [Project!]
+    assignedTasks: [Task!]
+    materialReviews: [MaterialReview!]
+    paginatedMaterials(input: PaginatedMaterialsInput!): MaterialPage!
+}

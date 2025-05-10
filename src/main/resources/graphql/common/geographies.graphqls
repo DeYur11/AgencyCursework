@@ -1,0 +1,51 @@
+type Office {
+    id: ID!
+    street: String
+    city: City!
+    createDatetime: String!
+    updateDatetime: String
+    workers: [Worker!]
+}
+
+type City {
+    id: ID!
+    name: String
+    country: Country
+    createDatetime: String!
+    updateDatetime: String
+    offices: [Office!]
+}
+
+type Country {
+    id: ID!
+    name: String
+    createDatetime: String!
+    updateDatetime: String
+    cities: [City!]
+}
+
+type WorkerAccount {
+    id: Int!
+    worker: Worker!
+    username: String!
+    passwordHash: String!
+}
+
+input WorkerAccountInput {
+    workerId: Int!
+    username: String!
+    password: String!
+}
+
+extend type Query {
+    workerAccountByWorkerId(workerId: Int!): WorkerAccount
+    workerAccountById(accountId: Int!): WorkerAccount
+    allWorkerAccounts: [WorkerAccount!]!
+}
+
+# Мутації
+extend type Mutation {
+    createWorkerAccount(input: WorkerAccountInput!): WorkerAccount
+    updateWorkerAccountUsername(accountId: Int!, newUsername: String!): WorkerAccount
+    deleteWorkerAccount(accountId: Int!): Boolean
+}
