@@ -12,8 +12,6 @@ type Project {
     client: Client!
     manager: Worker
     description: String
-    createDatetime: String!
-    updateDatetime: String
     payments: [Payment!]
     projectServices: [ProjectService!]
 }

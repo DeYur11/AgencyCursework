@@ -2,6 +2,7 @@ package org.example.advertisingagency.service.project;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Predicate;
+import org.example.advertisingagency.dto.PaginatedProjectsInput;
 import org.example.advertisingagency.dto.project.CreateProjectInput;
 import org.example.advertisingagency.dto.project.ProjectFilterDTO;
 import org.example.advertisingagency.dto.project.ProjectSortDTO;
