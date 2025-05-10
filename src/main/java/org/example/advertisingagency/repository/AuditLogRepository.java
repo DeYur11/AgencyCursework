@@ -19,7 +19,7 @@ public interface AuditLogRepository extends MongoRepository<AuditLog, String> {
   "entity": { "$in": ?0 }
 }
 """)
-    List<AuditLog> findTop100ByEntityInAndTaskIdInOrderByTimestampDesc(List<AuditEntity> allowedEntities, List<Integer> taskIds);
+    List<AuditLog> findTop100ByEntityInAndTaskIdInOrderByTimestampAsc(List<AuditEntity> allowedEntities, List<Integer> taskIds);
     @Query("""
 {
   "serviceInProgressId": { "$in": ?1 },

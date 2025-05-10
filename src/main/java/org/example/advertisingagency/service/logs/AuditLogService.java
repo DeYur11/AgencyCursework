@@ -29,7 +29,7 @@ public class AuditLogService {
     }
 
     public List<AuditLog> getTaskRelatedLogs(List<Integer> tasks) {
-        return auditLogRepository.findTop100ByEntityInAndTaskIdInOrderByTimestampDesc(List.of(AuditEntity.MATERIAL_REVIEW, AuditEntity.MATERIAL), tasks);
+        return auditLogRepository.findTop100ByEntityInAndTaskIdInOrderByTimestampAsc(List.of(AuditEntity.MATERIAL_REVIEW, AuditEntity.MATERIAL), tasks);
     }
 
     public void log(AuditLog log) {

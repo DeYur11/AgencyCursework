@@ -66,7 +66,7 @@ public class AuditController {
     @QueryMapping
     public List<AuditLog> auditLogsByTaskIds(@Argument List<AuditEntity> entityList,
                                              @Argument List<Integer> taskIds) {
-        return auditLogRepository.findTop100ByEntityInAndTaskIdInOrderByTimestampDesc(entityList, taskIds);
+        return auditLogRepository.findTop100ByEntityInAndTaskIdInOrderByTimestampAsc(entityList, taskIds);
     }
 
     @QueryMapping

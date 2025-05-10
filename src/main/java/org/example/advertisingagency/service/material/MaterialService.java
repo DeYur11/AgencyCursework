@@ -79,7 +79,7 @@ public class MaterialService {
 
     public Material getMaterialById(Integer id) {
         return materialRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Material not found"));
+                .orElse(null);
     }
 
     public List<Material> getAllMaterials() {

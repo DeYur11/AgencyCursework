@@ -20,53 +20,43 @@ public class ProjectServiceSpecifications {
         return (root, query, cb) -> {
             Predicate predicate = cb.conjunction();
 
-            // ----- SERVICE -----
             if (filter.serviceNameContains() != null && !filter.serviceNameContains().isBlank()) {
                 predicate = cb.and(predicate, cb.like(
                         cb.lower(root.get("service").get("serviceName")),
                         "%" + filter.serviceNameContains().toLowerCase() + "%"));
             }
-
             if (filter.serviceEstimateCostMin() != null) {
                 predicate = cb.and(predicate, cb.ge(
                         root.get("service").get("estimateCost"), filter.serviceEstimateCostMin()));
             }
-
             if (filter.serviceEstimateCostMax() != null) {
                 predicate = cb.and(predicate, cb.le(
                         root.get("service").get("estimateCost"), filter.serviceEstimateCostMax()));
             }
-
             if (filter.serviceTypeIds() != null && !filter.serviceTypeIds().isEmpty()) {
                 predicate = cb.and(predicate, root.get("service").get("serviceType").get("id")
                         .in(filter.serviceTypeIds()));
             }
 
-            // ----- PROJECT -----
             if (filter.projectNameContains() != null && !filter.projectNameContains().isBlank()) {
                 predicate = cb.and(predicate, cb.like(
                         cb.lower(root.get("project").get("name")),
                         "%" + filter.projectNameContains().toLowerCase() + "%"));
             }
-
             if (filter.projectDescriptionContains() != null && !filter.projectDescriptionContains().isBlank()) {
                 predicate = cb.and(predicate, cb.like(
                         cb.lower(root.get("project").get("description")),
                         "%" + filter.projectDescriptionContains().toLowerCase() + "%"));
             }
-
             if (filter.costMin() != null) {
                 predicate = cb.and(predicate, cb.ge(root.get("project").get("cost"), filter.costMin()));
             }
-
             if (filter.costMax() != null) {
                 predicate = cb.and(predicate, cb.le(root.get("project").get("cost"), filter.costMax()));
             }
-
             if (filter.estimateCostMin() != null) {
                 predicate = cb.and(predicate, cb.ge(root.get("project").get("estimateCost"), filter.estimateCostMin()));
             }
-
             if (filter.estimateCostMax() != null) {
                 predicate = cb.and(predicate, cb.le(root.get("project").get("estimateCost"), filter.estimateCostMax()));
             }
@@ -169,7 +159,6 @@ public class ProjectServiceSpecifications {
                 countSubquery.select(cb.count(subRoot));
                 countSubquery.where(cb.equal(subRoot.get("projectService").get("id"), root.get("id")));
 
-                // amount — Integer → кастуємо до Long для порівняння
                 predicate = cb.and(predicate, cb.notEqual(cb.toLong(root.get("amount")), countSubquery));
             }
 

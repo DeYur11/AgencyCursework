@@ -11,10 +11,7 @@ import org.example.advertisingagency.model.Worker;
 import org.example.advertisingagency.model.log.AuditAction;
 import org.example.advertisingagency.model.log.AuditEntity;
 import org.example.advertisingagency.model.log.AuditLog;
-import org.example.advertisingagency.repository.MaterialRepository;
-import org.example.advertisingagency.repository.MaterialReviewRepository;
-import org.example.advertisingagency.repository.MaterialSummaryRepository;
-import org.example.advertisingagency.repository.WorkerRepository;
+import org.example.advertisingagency.repository.*;
 import org.example.advertisingagency.service.auth.UserContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +35,9 @@ public class MaterialReviewService {
     private final MaterialRepository materialRepository;
     private final MaterialSummaryRepository materialSummaryRepository;
     private final WorkerRepository workerRepository;
+    @Autowired
+    private MaterialStatusRepository materialStatusRepository;
+
     public MaterialReviewService(MaterialReviewRepository materialReviewRepository,
                                  MaterialRepository materialRepository,
                                  MaterialSummaryRepository materialSummaryRepository,
@@ -74,8 +74,22 @@ public class MaterialReviewService {
 
         logAction(AuditAction.CREATE, saved);
 
+        long acceptedCount = materialReviewRepository
+                .findAllByMaterial_Id(input.getMaterialId())
+                .stream()
+                .filter(r -> r.getMaterialSummary() != null &&
+                        "ACCEPTED".equalsIgnoreCase(r.getMaterialSummary().getName()))
+                .count();
+
+        if (acceptedCount >= 3) {
+            Material material = saved.getMaterial();
+            material.setStatus(materialStatusRepository.findByName("Accepted").orElse(saved.getMaterial().getStatus()));
+            materialRepository.save(material);
+        }
+
         return saved;
     }
+
 
     public MaterialReview updateMaterialReview(Integer id, UpdateMaterialReviewInput input) {
         MaterialReview review = materialReviewRepository.findById(id)
