@@ -22,7 +22,7 @@ public class Material {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TypeID")
-    private MaterialType typeID;
+    private MaterialType type;
 
     @Size(max = 150)
     @NotNull
@@ -32,7 +32,7 @@ public class Material {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "StatusID")
-    private MaterialStatus statusID;
+    private MaterialStatus status;
 
     @Nationalized
     @Lob
@@ -41,23 +41,23 @@ public class Material {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UsageRestrictionsID")
-    private UsageRestriction usageRestrictionsID;
+    private UsageRestriction usageRestriction;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "LicenceTypeID")
-    private LicenceType licenceTypeID;
+    private LicenceType licenceType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TargetAudienceID")
-    private TargetAudience targetAudienceID;
+    private TargetAudience targetAudience;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "LanguageID")
-    private Language languageID;
+    private Language language;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TaskID")
-    private Task taskID;
+    private Task task;
 
     @NotNull
     @Column(name = "CreateDatetime", nullable = false)

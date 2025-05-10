@@ -1,8 +1,8 @@
 package org.example.advertisingagency.controller;
 
 import jakarta.persistence.EntityNotFoundException;
-import org.example.advertisingagency.dto.city.CreateCityInput;
-import org.example.advertisingagency.dto.city.UpdateCityInput;
+import org.example.advertisingagency.dto.common.city.CreateCityInput;
+import org.example.advertisingagency.dto.common.city.UpdateCityInput;
 import org.example.advertisingagency.model.City;
 import org.example.advertisingagency.model.Country;
 import org.example.advertisingagency.model.Office;
@@ -80,6 +80,11 @@ public class CityController {
     }
 
     @QueryMapping
+    public List<City> citiesByCountry(@Argument Integer countryId) {
+        return cityRepository.findAllByCountry_Id(countryId);
+    }
+
+    @QueryMapping
     public City city(@Argument Integer id) {
         return cityRepository.findById(id).orElse(null);
     }
@@ -96,4 +101,6 @@ public class CityController {
         }
         return officeRepository.findOfficesByCity_Id(city.getId());
     }
+
+
 }

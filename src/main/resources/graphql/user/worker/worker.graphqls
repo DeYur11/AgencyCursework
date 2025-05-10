@@ -12,4 +12,5 @@ type Worker {
     managedProjects: [Project!]
     assignedTasks: [Task!]
     materialReviews: [MaterialReview!]
+    paginatedMaterials(input: PaginatedMaterialsInput!): MaterialPage!
 }

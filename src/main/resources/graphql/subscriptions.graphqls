@@ -1,0 +1,7 @@
+type Subscription {
+    onReviewAuditLogByMaterialIds(materialIds: [Int!]!): AuditLog!
+    onAuditLogByTaskIds(entityList: [AuditEntity!]!, taskIds: [Int!]!): AuditLog!
+    onAuditLogByMaterialIds(entityList: [AuditEntity!]!, materialIds: [Int!]!): AuditLog!
+    onAuditLogByProjectIds(entityList: [AuditEntity!]!, projectIds: [Int!]!): AuditLog!
+    onAuditLogByServiceInProgressIds(entityList: [AuditEntity!]!, serviceIds: [Int!]!): AuditLog!
+}

@@ -32,8 +32,8 @@ public class Project {
     @Column(name = "RegistrationDate", nullable = false)
     private LocalDate registrationDate;
 
-    @NotNull
-    @Column(name = "StartDate", nullable = false)
+
+    @Column(name = "StartDate")
     private LocalDate startDate;
 
     @Column(name = "EndDate")
@@ -52,7 +52,7 @@ public class Project {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "TypeID", nullable = false)
-    private ProjectType type;
+    private ProjectType projectType;
 
     @Column(name = "PaymentDeadline")
     private LocalDate paymentDeadline;

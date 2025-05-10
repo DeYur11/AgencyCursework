@@ -7,3 +7,66 @@ type ProjectService {
     updateDatetime: String
     servicesInProgress: [ServiceInProgress!]
 }
+
+enum ProjectServiceSortField {
+    serviceName         # service.serviceName
+    serviceEstimateCost # service.estimateCost
+    projectName         # project.name
+    projectCost         # project.cost
+    projectEstimateCost # project.estimateCost
+    startDate           # project.startDate
+    endDate             # project.endDate
+}
+
+input ProjectServiceFilterInput {
+    serviceNameContains: String
+    serviceTypeIds: [ID!]
+    serviceEstimateCostMin: Float
+    serviceEstimateCostMax: Float
+
+    projectNameContains: String
+    projectDescriptionContains: String
+    costMin: Float
+    costMax: Float
+    estimateCostMin: Float
+    estimateCostMax: Float
+    registrationDateFrom: String
+    registrationDateTo: String
+    startDateFrom: String
+    startDateTo: String
+    endDateFrom: String
+    endDateTo: String
+    paymentDeadlineFrom: String
+    paymentDeadlineTo: String
+    statusIds: [ID!]
+    projectTypeIds: [ID!]
+    clientIds: [ID!]
+    managerIds: [ID!]
+
+    serviceInProgressStatusIds: [ID!]
+    serviceInProgressStartDateFrom: String
+    serviceInProgressStartDateTo: String
+    serviceInProgressEndDateFrom: String
+    serviceInProgressEndDateTo: String
+    serviceInProgressCostMin: Float
+    serviceInProgressCostMax: Float
+
+    onlyMismatched: Boolean
+}
+
+input PaginatedProjectServicesInput {
+    page: Int!
+    size: Int!
+    sortField: ProjectServiceSortField
+    sortDirection: SortDirection
+    filter: ProjectServiceFilterInput
+}
+
+type ProjectServicePage {
+    content: [ProjectService!]!
+    pageInfo: PageInfo!
+}
+
+extend type Query {
+    paginatedProjectServices(input: PaginatedProjectServicesInput!): ProjectServicePage!
+}

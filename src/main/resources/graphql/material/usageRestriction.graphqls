@@ -1,6 +1,6 @@
 type UsageRestriction {
     id: ID!
-    description: String
+    name: String
     createDatetime: String!
     updateDatetime: String
     materials: [Material!]

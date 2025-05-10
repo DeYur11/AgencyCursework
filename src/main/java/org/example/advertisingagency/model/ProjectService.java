@@ -20,11 +20,11 @@ public class ProjectService {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ServiceID")
-    private Service serviceID;
+    private Service service;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ProjectID")
-    private Project projectID;
+    private Project project;
 
     @Column(name = "Amount", columnDefinition = "tinyint")
     private Short amount;
@@ -45,4 +45,7 @@ public class ProjectService {
     protected void onUpdate() {
         updateDatetime = OffsetDateTime.now().toInstant();
     }
+
+    @OneToMany(mappedBy = "projectService", fetch = FetchType.LAZY)
+    private java.util.List<ServicesInProgress> servicesInProgress;
 }

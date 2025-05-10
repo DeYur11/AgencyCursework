@@ -1,8 +1,7 @@
 type Service {
     id: ID!
-    duration: Int
     estimateCost:   Float
-    type: ServiceType!
+    serviceType: ServiceType!
     serviceName: String
     createDatetime: String!
     updateDatetime: String

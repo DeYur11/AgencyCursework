@@ -2,12 +2,12 @@ type Project {
     id: ID!
     name: String!
     registrationDate: String!
-    startDate: String!
+    startDate: String
     endDate: String
     cost:  Float
     estimateCost: Float
     status: ProjectStatus
-    type: ProjectType!
+    projectType: ProjectType!
     paymentDeadline: String
     client: Client!
     manager: Worker

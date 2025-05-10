@@ -32,7 +32,6 @@ public class Task {
     @Column(name = "Description")
     private String description;
 
-    @NotNull
     @Column(name = "StartDate", nullable = false)
     private Instant startDate;
 

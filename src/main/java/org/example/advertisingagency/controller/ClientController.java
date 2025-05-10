@@ -1,6 +1,8 @@
 package org.example.advertisingagency.controller;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.example.advertisingagency.dto.client.CreateClientInput;
+import org.example.advertisingagency.dto.client.UpdateClientInput;
 import org.example.advertisingagency.model.Client;
 import org.example.advertisingagency.model.Project;
 import org.example.advertisingagency.repository.ClientRepository;
@@ -13,6 +15,7 @@ import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 
 @Controller
@@ -27,6 +30,8 @@ public class ClientController {
         this.projectRepository = projectRepository;
     }
 
+    // ====== QUERY ======
+
     @QueryMapping
     public List<Client> clients() {
         return clientRepository.findAll();
@@ -37,26 +42,27 @@ public class ClientController {
         return clientRepository.findById(id).orElse(null);
     }
 
+    // ====== MUTATION ======
+
     @MutationMapping
     @Transactional
-    public Client createClient(@Argument String name, @Argument String email, @Argument String phoneNumber) {
+    public Client createClient(@Argument CreateClientInput input) {
         Client client = new Client();
-        client.setName(name);
-        client.setEmail(email);
-        client.setPhoneNumber(phoneNumber);
+        client.setName(input.getName());
+        client.setEmail(input.getEmail());
+        client.setPhoneNumber(input.getPhoneNumber());
         return clientRepository.save(client);
     }
 
     @MutationMapping
     @Transactional
-    public Client updateClient(@Argument Integer id, @Argument String name,
-                               @Argument String email, @Argument String phoneNumber) {
+    public Client updateClient(@Argument Integer id, @Argument UpdateClientInput input) {
         Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Client not found with id: " + id));
 
-        if (name != null) client.setName(name);
-        if (email != null) client.setEmail(email);
-        if (phoneNumber != null) client.setPhoneNumber(phoneNumber);
+        if (input.getName() != null) client.setName(input.getName());
+        if (input.getEmail() != null) client.setEmail(input.getEmail());
+        if (input.getPhoneNumber() != null) client.setPhoneNumber(input.getPhoneNumber());
 
         return clientRepository.save(client);
     }
@@ -64,13 +70,20 @@ public class ClientController {
     @MutationMapping
     @Transactional
     public boolean deleteClient(@Argument Integer id) {
-        if (!clientRepository.existsById(id)) return false;
+        if (!clientRepository.existsById(id)) {
+            return false;
+        }
         clientRepository.deleteById(id);
         return true;
     }
 
+    // ====== SCHEMA MAPPING ======
+
     @SchemaMapping(typeName = "Client", field = "projects")
     public List<Project> getProjects(Client client) {
+        if (client.getId() == null) {
+            return Collections.emptyList();
+        }
         return projectRepository.findAllByClient_Id(client.getId());
     }
 }

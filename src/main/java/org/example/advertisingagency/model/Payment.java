@@ -38,7 +38,7 @@ public class Payment {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "ProjectID", nullable = false)
-    private Project projectID;
+    private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PaymentPurpose")

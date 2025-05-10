@@ -58,7 +58,15 @@ type Query {
     tasksByWorker(workerId: ID!): [Task!]!
     material(id: ID!): Material
     materials: [Material!]!
+    materialsByTask(taskId: ID!): [Material!]!
     materialReview(id: ID!): MaterialReview
     materialReviews: [MaterialReview!]!
     reviewsByMaterial(materialId: ID!): [MaterialReview!]!
+    servicesInProgressByProjectService(projectServiceId: ID!): [ServiceInProgress!]!
+    paginatedProjects(input: PaginatedProjectsInput!): ProjectPage!
+    workersByPosition(position: String!): [Worker!]!
+    paginatedMaterials(input: PaginatedMaterialsInput!): MaterialPage!
+    materialsByWorker(workerId: ID!): [Material!]!
+    activeProjectTasks: [Task!]!
+    projectsByManager(managerId: ID!): [Project]!
 }

@@ -1,13 +1,115 @@
 type Mutation {
+
     createCountry(input: CreateCountryInput!): Country!
-    updateCountry(id: ID!, input: UpdateCountryInput!): Country
+    updateCountry(id: ID!, input: UpdateCountryInput!): Country!
     deleteCountry(id: ID!): Boolean!
 
     createCity(input: CreateCityInput!): City!
-    updateCity(id: ID!, input: UpdateCityInput!): City
+    updateCity(id: ID!, input: UpdateCityInput!): City!
     deleteCity(id: ID!): Boolean!
 
     createOffice(input: CreateOfficeInput!): Office!
-    updateOffice(id: ID!, input: UpdateOfficeInput!): Office
+    updateOffice(id: ID!, input: UpdateOfficeInput!): Office!
     deleteOffice(id: ID!): Boolean!
+
+    createClient(input: CreateClientInput!): Client!
+    updateClient(id: ID!, input: UpdateClientInput!): Client!
+    deleteClient(id: ID!): Boolean!
+
+    createPosition(input: CreatePositionInput!): Position!
+    updatePosition(id: ID!, input: UpdatePositionInput!): Position!
+    deletePosition(id: ID!): Boolean!
+
+    createWorker(input: CreateWorkerInput!): Worker!
+    updateWorker(id: ID!, input: UpdateWorkerInput!): Worker!
+    deleteWorker(id: ID!): Boolean!
+
+    createProjectType(input: CreateProjectTypeInput!): ProjectType!
+    updateProjectType(id: ID!, input: UpdateProjectTypeInput!): ProjectType!
+    deleteProjectType(id: ID!): Boolean!
+
+    createProjectStatus(input: CreateProjectStatusInput!): ProjectStatus!
+    updateProjectStatus(id: ID!, input: UpdateProjectStatusInput!): ProjectStatus!
+    deleteProjectStatus(id: ID!): Boolean!
+
+    createProject(input: CreateProjectInput!): Project!
+    updateProject(id: ID!, input: UpdateProjectInput!): Project!
+    deleteProject(id: ID!): Boolean!
+
+    createServiceType(input: CreateServiceTypeInput!): ServiceType!
+    updateServiceType(id: ID!, input: UpdateServiceTypeInput!): ServiceType!
+    deleteServiceType(id: ID!): Boolean!
+
+    createService(input: CreateServiceInput!): Service!
+    updateService(id: ID!, input: UpdateServiceInput!): Service!
+    deleteService(id: ID!): Boolean!
+
+    createMaterialType(input: CreateMaterialTypeInput!): MaterialType!
+    updateMaterialType(id: ID!, input: UpdateMaterialTypeInput!): MaterialType!
+    deleteMaterialType(id: ID!): Boolean!
+
+    createMaterialStatus(input: CreateMaterialStatusInput!): MaterialStatus!
+    updateMaterialStatus(id: ID!, input: UpdateMaterialStatusInput!): MaterialStatus!
+    deleteMaterialStatus(id: ID!): Boolean!
+
+    createUsageRestriction(input: CreateUsageRestrictionInput!): UsageRestriction!
+    updateUsageRestriction(id: ID!, input: UpdateUsageRestrictionInput!): UsageRestriction!
+    deleteUsageRestriction(id: ID!): Boolean!
+
+    createLicenceType(input: CreateLicenceTypeInput!): LicenceType!
+    updateLicenceType(id: ID!, input: UpdateLicenceTypeInput!): LicenceType!
+    deleteLicenceType(id: ID!): Boolean!
+
+    createTargetAudience(input: CreateTargetAudienceInput!): TargetAudience!
+    updateTargetAudience(id: ID!, input: UpdateTargetAudienceInput!): TargetAudience!
+    deleteTargetAudience(id: ID!): Boolean!
+
+    createLanguage(input: CreateLanguageInput!): Language!
+    updateLanguage(id: ID!, input: UpdateLanguageInput!): Language!
+    deleteLanguage(id: ID!): Boolean!
+
+    createTaskStatus(input: CreateTaskStatusInput!): TaskStatus!
+    updateTaskStatus(id: ID!, input: UpdateTaskStatusInput!): TaskStatus!
+    deleteTaskStatus(id: ID!): Boolean!
+
+    createMaterialSummary(input: CreateMaterialSummaryInput!): MaterialSummary!
+    updateMaterialSummary(id: ID!, input: UpdateMaterialSummaryInput!): MaterialSummary!
+    deleteMaterialSummary(id: ID!): Boolean!
+
+    createPaymentPurpose(input: CreatePaymentPurposeInput!): PaymentPurpose!
+    updatePaymentPurpose(id: ID!, input: UpdatePaymentPurposeInput!): PaymentPurpose!
+    deletePaymentPurpose(id: ID!): Boolean!
+
+    createPayment(input: CreatePaymentInput!): Payment!
+    updatePayment(id: ID!, input: UpdatePaymentInput!): Payment!
+    deletePayment(id: ID!): Boolean!
+
+    createServiceInProgressStatus(input: CreateServiceInProgressStatusInput!): ServiceInProgressStatus!
+    updateServiceInProgressStatus(id: ID!, input: UpdateServiceInProgressStatusInput!): ServiceInProgressStatus!
+    deleteServiceInProgressStatus(id: ID!): Boolean!
+
+    createProjectService(input: CreateProjectServiceInput!): ProjectService!
+    updateProjectService(id: ID!, input: UpdateProjectServiceInput!): ProjectService!
+    deleteProjectService(id: ID!): Boolean!
+
+    createServiceInProgress(input: CreateServiceInProgressInput!): ServiceInProgress!
+    updateServiceInProgress(id: ID!, input: UpdateServiceInProgressInput!): ServiceInProgress!
+    deleteServiceInProgress(id: ID!): Boolean!
+
+    createKeyword(input: CreateKeywordInput!): Keyword!
+    updateKeyword(id: ID!, input: UpdateKeywordInput!): Keyword!
+    deleteKeyword(id: ID!): Boolean!
+
+    createTask(input: CreateTaskInput!): Task!
+    updateTask(id: ID!, input: UpdateTaskInput!): Task!
+    deleteTask(id: ID!): Boolean!
+
+    createMaterial(input: CreateMaterialInput!): Material!
+    updateMaterial(id: ID!, input: UpdateMaterialInput!): Material!
+    deleteMaterial(id: ID!): Boolean!
+
+    createMaterialReview(input: CreateMaterialReviewInput): MaterialReview!
+    updateMaterialReview(id: ID!, input: UpdateMaterialReviewInput!): MaterialReview!
+    deleteMaterialReview(id: ID!): Boolean!
+    transitionTaskStatus(input: TransitionTaskStatusInput!): Task!
 }

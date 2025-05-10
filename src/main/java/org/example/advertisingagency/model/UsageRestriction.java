@@ -22,7 +22,7 @@ public class UsageRestriction {
     @Nationalized
     @Lob
     @Column(name = "Description")
-    private String description;
+    private String name;
 
     @NotNull
     @Column(name = "CreateDatetime", nullable = false)

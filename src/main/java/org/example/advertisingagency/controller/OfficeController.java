@@ -1,12 +1,14 @@
 package org.example.advertisingagency.controller;
 
 import jakarta.persistence.EntityNotFoundException;
-import org.example.advertisingagency.dto.office.CreateOfficeInput;
-import org.example.advertisingagency.dto.office.UpdateOfficeInput;
+import org.example.advertisingagency.dto.common.office.CreateOfficeInput;
+import org.example.advertisingagency.dto.common.office.UpdateOfficeInput;
 import org.example.advertisingagency.model.City;
 import org.example.advertisingagency.model.Office;
+import org.example.advertisingagency.model.Worker;
 import org.example.advertisingagency.repository.CityRepository;
 import org.example.advertisingagency.repository.OfficeRepository;
+import org.example.advertisingagency.service.user.WorkerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -22,11 +24,13 @@ public class OfficeController {
 
     private final OfficeRepository officeRepository;
     private final CityRepository cityRepository;
+    private final WorkerService workerService;
 
     @Autowired
-    public OfficeController(OfficeRepository officeRepository, CityRepository cityRepository) {
+    public OfficeController(OfficeRepository officeRepository, CityRepository cityRepository, WorkerService workerService) {
         this.officeRepository = officeRepository;
         this.cityRepository = cityRepository;
+        this.workerService = workerService;
     }
 
     @MutationMapping
@@ -82,5 +86,10 @@ public class OfficeController {
     @SchemaMapping(typeName = "Office", field = "city")
     public City getCityForOffice(Office office) {
         return office.getCity();
+    }
+
+    @SchemaMapping(typeName = "Office", field = "workers")
+    public List<Worker> getWorkers(Office office) {
+        return workerService.getWorkersByOfficeId(office.getId());
     }
 }
