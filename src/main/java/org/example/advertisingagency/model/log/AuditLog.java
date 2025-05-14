@@ -4,6 +4,8 @@ import jakarta.persistence.Id;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.example.advertisingagency.model.log.AuditAction;
+import org.example.advertisingagency.model.log.AuditEntity;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
@@ -30,4 +32,10 @@ public class AuditLog {
     private Integer materialId;
     private Integer materialReviewId;
     private Instant timestamp;
+
+    private Object beforeState;
+    private Object afterState;
+
+    private Boolean reverted;
+    private String revertedByLogId;
 }

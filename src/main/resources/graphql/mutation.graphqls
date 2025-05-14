@@ -111,5 +111,8 @@ type Mutation {
     createMaterialReview(input: CreateMaterialReviewInput): MaterialReview!
     updateMaterialReview(id: ID!, input: UpdateMaterialReviewInput!): MaterialReview!
     deleteMaterialReview(id: ID!): Boolean!
+
     transitionTaskStatus(input: TransitionTaskStatusInput!): Task!
+
+    changeProjectStatus(projectId: ID!, statusId: Int!): Project!
 }

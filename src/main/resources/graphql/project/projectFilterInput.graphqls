@@ -5,7 +5,8 @@ enum ProjectSortField {
     registrationDate
     startDate
     endDate
-    paymentDeadline
+    paymentDeadline,
+    status
 }
 
 input ProjectFilterInput {

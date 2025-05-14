@@ -56,6 +56,6 @@ public class MaterialTypeService {
     }
 
     public List<Material> getMaterialsByMaterialType(Integer typeId) {
-        return materialRepository.findAllByType_Id(typeId);
+        return materialRepository.findAllByMaterialType_Id(typeId);
     }
 }

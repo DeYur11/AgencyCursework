@@ -3,9 +3,11 @@ package org.example.advertisingagency.service.user;
 import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.dto.worker.CreateWorkerInput;
 import org.example.advertisingagency.dto.worker.UpdateWorkerInput;
+import org.example.advertisingagency.exception.EntityInUseException;
 import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,10 +91,19 @@ public class WorkerService {
 
     @Transactional
     public boolean deleteWorker(Integer id) {
-        if (!workerRepository.existsById(id)) return false;
-        workerRepository.deleteById(id);
-        return true;
+        if (!workerRepository.existsById(id)) {
+            return false;
+        }
+
+        try {
+            workerRepository.deleteById(id);
+            workerRepository.flush();
+            return true;
+        } catch (DataIntegrityViolationException ex) {
+            throw new EntityInUseException("Працівник має пов'язані записи, тому не може бути видалений");
+        }
     }
+
 
     public List<Project> getManagedProjects(Integer workerId) {
         return projectRepository.findAllByManager_Id(workerId);

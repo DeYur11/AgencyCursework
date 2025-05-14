@@ -6,6 +6,7 @@ public enum ProjectSortField {
     endDate,
     cost,
     estimateCost,
-    registrationDate
+    registrationDate,
+    status
 }
 

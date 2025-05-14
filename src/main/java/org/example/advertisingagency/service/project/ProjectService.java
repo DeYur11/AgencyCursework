@@ -1,14 +1,19 @@
 package org.example.advertisingagency.service.project;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.StoredProcedureQuery;
 import jakarta.persistence.criteria.Predicate;
 import org.example.advertisingagency.dto.PaginatedProjectsInput;
 import org.example.advertisingagency.dto.project.CreateProjectInput;
 import org.example.advertisingagency.dto.project.ProjectFilterDTO;
 import org.example.advertisingagency.dto.project.ProjectSortDTO;
 import org.example.advertisingagency.dto.project.UpdateProjectInput;
+import org.example.advertisingagency.exception.EntityInUseException;
 import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +36,7 @@ public class ProjectService {
     private final WorkerRepository workerRepository;
     private final PaymentRepository paymentRepository;
     private final ProjectServiceRepository projectServiceRepository;
+    private final EntityManager entityManager;
 
     public ProjectService(ProjectRepository projectRepository,
                           ProjectStatusRepository projectStatusRepository,
@@ -38,7 +44,7 @@ public class ProjectService {
                           ClientRepository clientRepository,
                           WorkerRepository workerRepository,
                           PaymentRepository paymentRepository,
-                          ProjectServiceRepository projectServiceRepository) {
+                          ProjectServiceRepository projectServiceRepository, EntityManager entityManager) {
         this.projectRepository = projectRepository;
         this.projectStatusRepository = projectStatusRepository;
         this.projectTypeRepository = projectTypeRepository;
@@ -46,6 +52,7 @@ public class ProjectService {
         this.workerRepository = workerRepository;
         this.paymentRepository = paymentRepository;
         this.projectServiceRepository = projectServiceRepository;
+        this.entityManager = entityManager;
     }
 
     public Project getProjectById(Integer id) {
@@ -86,6 +93,21 @@ public class ProjectService {
         return projectRepository.save(project);
     }
 
+    public Project updateStatus(Integer projectId, Integer statusId) {
+        ProjectStatus newStatus = projectStatusRepository.findById(statusId).orElseThrow(() -> new RuntimeException("Status not found"));
+        Project project = projectRepository.findById(projectId).orElseThrow(() -> new RuntimeException("Project not found"));
+
+        StoredProcedureQuery query = entityManager.createStoredProcedureQuery("usp_UpdateProjectStatusWithCascade");
+
+        query.setParameter("ProjectID", projectId);
+        query.setParameter("NewStatusID", statusId);
+
+        query.execute();
+
+        project.setStatus(newStatus);
+        return project;
+    }
+
     public Project updateProject(Integer id, UpdateProjectInput input) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
@@ -110,7 +132,12 @@ public class ProjectService {
         if (!projectRepository.existsById(id)) {
             return false;
         }
-        projectRepository.deleteById(id);
+        try {
+            projectRepository.deleteById(id);
+            projectRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new EntityInUseException("Проект має активні замовлення сервісів");
+        }
         return true;
     }
 

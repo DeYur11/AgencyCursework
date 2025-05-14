@@ -18,10 +18,7 @@ import org.example.advertisingagency.service.service.ServicesInProgressService;
 import org.example.advertisingagency.service.task.TaskService;
 import org.example.advertisingagency.service.user.WorkerService;
 import org.reactivestreams.Publisher;
-import org.springframework.graphql.data.method.annotation.Argument;
-import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.graphql.data.method.annotation.SchemaMapping;
-import org.springframework.graphql.data.method.annotation.SubscriptionMapping;
+import org.springframework.graphql.data.method.annotation.*;
 import org.springframework.stereotype.Controller;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
@@ -87,6 +84,13 @@ public class AuditController {
     public List<AuditLog> auditLogsByServiceInProgressIds(@Argument List<AuditEntity> entityList,
                                                           @Argument List<Integer> serviceIds) {
         return auditLogRepository.findTop100ByEntityInAndServiceInProgressIdInOrderByTimestampDesc(entityList, serviceIds);
+    }
+
+    @MutationMapping
+    public AuditLog rollbackAuditLog(@Argument String auditLogId, @Argument String username) {
+        auditLogService.rollback(auditLogId, username);
+        return auditLogRepository.findById(auditLogId)
+                .orElseThrow(() -> new RuntimeException("Original audit log not found"));
     }
 
     @SubscriptionMapping

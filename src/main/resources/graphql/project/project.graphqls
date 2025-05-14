@@ -15,3 +15,9 @@ type Project {
     payments: [Payment!]
     projectServices: [ProjectService!]
 }
+
+extend type Mutation{
+    resumeProject(projectId: ID!): Project!
+    pauseProject(projectId: ID!): Project!
+    cancelProject(projectId: ID!): Project!
+}

@@ -20,12 +20,12 @@ input UpdateCityInput {
 # Office
 input CreateOfficeInput {
     cityId: ID!
-    name: String!
+    street: String!
 }
 
 input UpdateOfficeInput {
     cityId: ID
-    name: String
+    street: String
 }
 
 # Client
@@ -316,7 +316,7 @@ input CreateMaterialInput {
     licenceTypeId: ID
     targetAudienceId: ID
     languageId: ID
-    typeId: ID
+    materialTypeId: ID
     materialStatusId: ID
     taskId: ID
     keywordIds: [ID!]

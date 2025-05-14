@@ -22,7 +22,7 @@ public class Material {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TypeID")
-    private MaterialType type;
+    private MaterialType materialType;
 
     @Size(max = 150)
     @NotNull

@@ -9,6 +9,7 @@ import org.example.advertisingagency.dto.material.material.UpdateMaterialInput;
 import org.example.advertisingagency.dto.project.PageInfo;
 import org.example.advertisingagency.event.AuditLogEvent;
 import org.example.advertisingagency.model.*;
+import org.example.advertisingagency.model.auth.AuthenticatedUserContext;
 import org.example.advertisingagency.model.log.AuditAction;
 import org.example.advertisingagency.model.log.AuditEntity;
 import org.example.advertisingagency.model.log.AuditLog;
@@ -92,7 +93,7 @@ public class MaterialService {
         material.setName(input.getName());
         material.setDescription(input.getDescription());
         material.setCreateDatetime(Instant.now());
-        material.setType(findMaterialType(input.getMaterialTypeId()));
+        material.setMaterialType(findMaterialType(input.getMaterialTypeId()));
         material.setStatus(materialStatusRepository.findByName(STARTING_STATUS).orElse(null));
         material.setUsageRestriction(findUsageRestriction(input.getUsageRestrictionId()));
         material.setLicenceType(findLicenceType(input.getLicenceTypeId()));
@@ -131,7 +132,7 @@ public class MaterialService {
         if (input.getDescription() != null) material.setDescription(input.getDescription());
         material.setUpdateDatetime(Instant.now());
 
-        if (input.getTypeId() != null) material.setType(findMaterialType(input.getTypeId()));
+        if (input.getTypeId() != null) material.setMaterialType(findMaterialType(input.getTypeId()));
         if (input.getStatusId() != null) material.setStatus(findMaterialStatus(input.getStatusId()));
         if (input.getUsageRestrictionId() != null) material.setUsageRestriction(findUsageRestriction(input.getUsageRestrictionId()));
         if (input.getLicenceTypeId() != null) material.setLicenceType(findLicenceType(input.getLicenceTypeId()));
@@ -311,7 +312,7 @@ public class MaterialService {
 
     private void logMaterialAction(AuditAction action, Material material) {
         var user = UserContextHolder.get();
-
+        if(user == null) user = new AuthenticatedUserContext(1, "user", "Worker");
         AuditLog log = AuditLog.builder()
                 .workerId(user.getWorkerId())
                 .username(user.getUsername())
@@ -337,5 +338,4 @@ public class MaterialService {
 
         eventPublisher.publishEvent(new AuditLogEvent(this, log));
     }
-
 }

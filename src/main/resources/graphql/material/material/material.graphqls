@@ -1,6 +1,6 @@
 type Material {
     id: ID!
-    type: MaterialType
+    materialType: MaterialType
     name: String!
     status: MaterialStatus
     description: String

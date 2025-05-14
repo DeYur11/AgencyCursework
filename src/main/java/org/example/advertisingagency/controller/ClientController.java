@@ -3,11 +3,13 @@ package org.example.advertisingagency.controller;
 import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.dto.client.CreateClientInput;
 import org.example.advertisingagency.dto.client.UpdateClientInput;
+import org.example.advertisingagency.exception.EntityInUseException;
 import org.example.advertisingagency.model.Client;
 import org.example.advertisingagency.model.Project;
 import org.example.advertisingagency.repository.ClientRepository;
 import org.example.advertisingagency.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -73,8 +75,13 @@ public class ClientController {
         if (!clientRepository.existsById(id)) {
             return false;
         }
-        clientRepository.deleteById(id);
-        return true;
+        try {
+            clientRepository.deleteById(id);
+            clientRepository.flush();
+            return true;
+        }catch (DataIntegrityViolationException e) {
+            throw new EntityInUseException("Клієнт має пов'язані записи у проектах");
+        }
     }
 
     // ====== SCHEMA MAPPING ======

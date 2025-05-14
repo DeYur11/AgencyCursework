@@ -18,7 +18,7 @@ public interface MaterialRepository extends JpaRepository<Material, Integer> {
     List<Material> findAllByTargetAudience_Id(Integer targetAudienceId);
     List<Material> findAllByLicenceType_Id(Integer licenceTypeId);
     List<Material> findAllByStatus_Id(Integer statusId);
-    List<Material> findAllByType_Id(Integer typeId);
+    List<Material> findAllByMaterialType_Id(Integer typeId);
     List<Material> findAllByUsageRestriction_Id(Integer usageRestrictionId);
     List<Material> findAllByTask_Id(Integer taskId);
     Page<Material> findAll(Specification<Material> spec, Pageable pageable);

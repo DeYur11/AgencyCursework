@@ -16,7 +16,7 @@ public class ProjectSpecifications {
             }
 
             if (filter.getDescriptionContains() != null && !filter.getDescriptionContains().isBlank()) {
-                predicate = cb.and(predicate, cb.like(cb.lower(root.get("description")), "%" + filter.getDescriptionContains().toLowerCase() + "%"));
+                predicate = cb.or(predicate, cb.like(cb.lower(root.get("description")), "%" + filter.getDescriptionContains().toLowerCase() + "%"));
             }
 
             if (filter.getRegistrationDateFrom() != null) {

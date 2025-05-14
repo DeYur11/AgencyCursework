@@ -12,7 +12,6 @@ import org.example.advertisingagency.specification.ProjectSpecifications;
 import org.example.advertisingagency.util.BatchLoaderUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.graphql.data.method.annotation.*;
@@ -64,8 +63,29 @@ public class ProjectController {
 
     @MutationMapping
     @Transactional
+    public Project changeProjectStatus(@Argument Integer projectId, @Argument Integer statusId ) {
+        return projectService.updateStatus(projectId, statusId);
+    }
+
+    @MutationMapping
+    @Transactional
     public boolean deleteProject(@Argument Integer id) {
         return projectService.deleteProject(id);
+    }
+
+    @MutationMapping
+    public Project pauseProject(@Argument Integer projectId) {
+        return new Project();
+    }
+
+    @MutationMapping
+    public Project resumeProject(@Argument Integer projectId) {
+        return new Project();
+    }
+
+    @MutationMapping
+    public Project cancelProject(@Argument Integer projectId) {
+        return new Project();
     }
 
     @BatchMapping(typeName = "Project", field = "payments")
@@ -112,8 +132,7 @@ public class ProjectController {
     }
 
     @QueryMapping
-    public ProjectPage paginatedProjects(@Argument PaginatedProjectsInput input) {
-        Sort sort = (input.sortField() != null && input.sortDirection() != null)
+    public ProjectPage paginatedProjects(@Argument PaginatedProjectsInput input) {Sort sort = (input.sortField() != null && input.sortDirection() != null)
                 ? Sort.by(Sort.Direction.valueOf(input.sortDirection().name()), input.sortField().name())
                 : Sort.unsorted();
 

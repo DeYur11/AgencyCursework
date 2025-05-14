@@ -3,6 +3,7 @@ package org.example.advertisingagency.service.service;
 import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.dto.service.projectservice.CreateProjectServiceInput;
 import org.example.advertisingagency.dto.service.projectservice.UpdateProjectServiceInput;
+import org.example.advertisingagency.exception.EntityInUseException;
 import org.example.advertisingagency.model.ProjectService;
 import org.example.advertisingagency.model.Project;
 import org.example.advertisingagency.model.Service;
@@ -11,6 +12,7 @@ import org.example.advertisingagency.repository.ProjectRepository;
 import org.example.advertisingagency.repository.ProjectServiceRepository;
 import org.example.advertisingagency.repository.ServiceRepository;
 import org.example.advertisingagency.repository.ServicesInProgressRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 
@@ -70,7 +72,13 @@ public class ProjectServiceService {
         if (!projectServiceRepository.existsById(id)) {
             return false;
         }
-        projectServiceRepository.deleteById(id);
+        try {
+            projectServiceRepository.deleteById(id);
+            projectServiceRepository.flush();
+        }catch (DataIntegrityViolationException e) {
+            throw new EntityInUseException("Замовлення має реалізації");
+        }
+
         return true;
     }
 

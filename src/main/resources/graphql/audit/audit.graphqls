@@ -2,6 +2,7 @@ enum AuditAction {
     CREATE
     UPDATE
     DELETE
+    ROLLBACK
 }
 
 enum AuditEntity {
@@ -26,12 +27,17 @@ type AuditLog {
     serviceInProgress: ServiceInProgress
     review: MaterialReview
     timestamp: String
+    reverted: Boolean
+    revertedByLogId: ID
 }
 
 extend type Query {
-
     auditLogsByTaskIds(entityList: [AuditEntity!]!, taskIds: [Int!]!): [AuditLog!]!
     auditLogsByMaterialIds(entityList: [AuditEntity!]!, materialIds: [Int!]!): [AuditLog!]!
     auditLogsByProjectIds(entityList: [AuditEntity!]!, projectIds: [Int!]!): [AuditLog!]!
     auditLogsByServiceInProgressIds(entityList: [AuditEntity!]!, serviceIds: [Int!]!): [AuditLog!]!
+}
+
+extend type Mutation {
+    rollbackAuditLog(auditLogId: ID!, username: String!): AuditLog!
 }

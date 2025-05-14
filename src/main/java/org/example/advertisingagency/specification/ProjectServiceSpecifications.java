@@ -21,7 +21,7 @@ public class ProjectServiceSpecifications {
             Predicate predicate = cb.conjunction();
 
             if (filter.serviceNameContains() != null && !filter.serviceNameContains().isBlank()) {
-                predicate = cb.and(predicate, cb.like(
+                predicate = cb.or(predicate, cb.like(
                         cb.lower(root.get("service").get("serviceName")),
                         "%" + filter.serviceNameContains().toLowerCase() + "%"));
             }
@@ -39,12 +39,12 @@ public class ProjectServiceSpecifications {
             }
 
             if (filter.projectNameContains() != null && !filter.projectNameContains().isBlank()) {
-                predicate = cb.and(predicate, cb.like(
+                predicate = cb.or(predicate, cb.like(
                         cb.lower(root.get("project").get("name")),
                         "%" + filter.projectNameContains().toLowerCase() + "%"));
             }
             if (filter.projectDescriptionContains() != null && !filter.projectDescriptionContains().isBlank()) {
-                predicate = cb.and(predicate, cb.like(
+                predicate = cb.or(predicate, cb.like(
                         cb.lower(root.get("project").get("description")),
                         "%" + filter.projectDescriptionContains().toLowerCase() + "%"));
             }

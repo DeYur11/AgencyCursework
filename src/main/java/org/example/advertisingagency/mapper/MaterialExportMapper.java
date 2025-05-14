@@ -10,7 +10,7 @@ public class MaterialExportMapper {
                 m.getId(),
                 m.getName(),
                 m.getDescription(),
-                m.getType() != null ? m.getType().getName() : null,
+                m.getMaterialType() != null ? m.getMaterialType().getName() : null,
                 m.getLanguage() != null ? m.getLanguage().getName() : null,
                 m.getLicenceType() != null ? m.getLicenceType().getName() : null,
                 m.getTargetAudience() != null ? m.getTargetAudience().getName() : null,

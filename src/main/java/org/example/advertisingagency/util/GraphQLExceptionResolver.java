@@ -3,6 +3,7 @@ package org.example.advertisingagency.util;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.schema.DataFetchingEnvironment;
+import org.example.advertisingagency.exception.EntityInUseException;
 import org.example.advertisingagency.exception.InvalidMaterialState;
 import org.example.advertisingagency.exception.InvalidStateTransitionException;
 import org.springframework.graphql.execution.DataFetcherExceptionResolver;
@@ -10,29 +11,32 @@ import org.springframework.graphql.execution.ErrorType;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import java.util.Collections;
 import java.util.List;
 
 @Component
 public class GraphQLExceptionResolver implements DataFetcherExceptionResolver {
 
     @Override
-    public Mono<List<GraphQLError>> resolveException(Throwable exception, DataFetchingEnvironment environment) {
-        if (exception instanceof InvalidStateTransitionException) {
-            return Mono.just(
-                    Collections.singletonList(GraphqlErrorBuilder.newError(environment)
-                            .message(exception.getMessage())
-                            .errorType(ErrorType.BAD_REQUEST)
-                            .build())
-            );
-        }else if (exception instanceof InvalidMaterialState){
-            return Mono.just(
-                    Collections.singletonList(GraphqlErrorBuilder.newError(environment)
-                            .message(exception.getMessage())
-                            .errorType(ErrorType.BAD_REQUEST)
-                            .build())
-            );
-        }
-        return Mono.empty(); // не обробляємо — передаємо далі
+    public Mono<List<GraphQLError>> resolveException(Throwable ex,
+                                                     DataFetchingEnvironment env) {
+
+        List<GraphQLError> errors = switch (ex) {
+            case InvalidStateTransitionException e -> List.of(buildError(e, env, ErrorType.BAD_REQUEST));
+            case InvalidMaterialState          e -> List.of(buildError(e, env, ErrorType.BAD_REQUEST));
+            case EntityInUseException          e -> List.of(buildError(e, env, ErrorType.BAD_REQUEST));
+            default                            -> List.of();
+        };
+
+        return errors.isEmpty() ? Mono.empty() : Mono.just(errors);
+    }
+
+    private GraphQLError buildError(Throwable ex,
+                                    DataFetchingEnvironment env,
+                                    ErrorType type) {
+
+        return GraphqlErrorBuilder.newError(env)
+                .message(ex.getMessage())
+                .errorType(type)
+                .build();
     }
 }
