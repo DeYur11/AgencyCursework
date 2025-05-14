@@ -75,17 +75,17 @@ public class ProjectController {
 
     @MutationMapping
     public Project pauseProject(@Argument Integer projectId) {
-        return new Project();
+        return projectService.pauseProject(projectId);
     }
 
     @MutationMapping
     public Project resumeProject(@Argument Integer projectId) {
-        return new Project();
+        return projectService.resumeProject(projectId);
     }
 
     @MutationMapping
     public Project cancelProject(@Argument Integer projectId) {
-        return new Project();
+        return projectService.cancelProject(projectId);
     }
 
     @BatchMapping(typeName = "Project", field = "payments")

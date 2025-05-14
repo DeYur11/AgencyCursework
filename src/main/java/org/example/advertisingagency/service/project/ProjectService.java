@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -63,6 +64,29 @@ public class ProjectService {
     public List<Project> getProjectByProjectManager(Integer projectManagerId) {
         return projectRepository.findAllByManager_Id(projectManagerId);
     }
+
+
+    @Transactional
+    public Project pauseProject(Integer projectId) {
+        int pausedStatusId = projectStatusRepository.findByName("Paused").get().getId();
+        projectRepository.executeStatusUpdateProcedure(projectId, pausedStatusId);
+        return getProjectById(projectId);
+    }
+
+    @Transactional
+    public Project cancelProject(Integer projectId) {
+        int cancelledStatusId = projectStatusRepository.findByName("Cancelled").get().getId();
+        projectRepository.executeStatusUpdateProcedure(projectId, cancelledStatusId);
+        return getProjectById(projectId);
+    }
+
+    @Transactional
+    public Project resumeProject(Integer projectId) {
+        int inProgressStatusId = projectStatusRepository.findByName("Not Started").get().getId();
+        projectRepository.executeStatusUpdateProcedure(projectId, inProgressStatusId);
+        return getProjectById(projectId);
+    }
+
 
     public List<Project> getAllProjects() {
         return projectRepository.findAll();

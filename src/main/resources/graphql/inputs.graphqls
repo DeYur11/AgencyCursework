@@ -109,7 +109,6 @@ input UpdateProjectInput {
     estimateCost: Float
     paymentDeadline: String
     managerId: ID
-    statusId: ID
 }
 
 
