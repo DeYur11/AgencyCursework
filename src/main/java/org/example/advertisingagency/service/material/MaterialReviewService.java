@@ -4,48 +4,53 @@ import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.dto.material.review.CreateMaterialReviewInput;
 import org.example.advertisingagency.dto.material.review.UpdateMaterialReviewInput;
 import org.example.advertisingagency.event.AuditLogEvent;
-import org.example.advertisingagency.model.Material;
-import org.example.advertisingagency.model.MaterialReview;
-import org.example.advertisingagency.model.MaterialSummary;
-import org.example.advertisingagency.model.Worker;
+import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.model.log.AuditAction;
 import org.example.advertisingagency.model.log.AuditEntity;
 import org.example.advertisingagency.model.log.AuditLog;
 import org.example.advertisingagency.repository.*;
 import org.example.advertisingagency.service.auth.UserContextHolder;
+import org.example.advertisingagency.service.logs.TransactionLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class MaterialReviewService {
 
     private static final Logger log = LoggerFactory.getLogger(MaterialReviewService.class);
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
 
     private final MaterialReviewRepository materialReviewRepository;
     private final MaterialRepository materialRepository;
     private final MaterialSummaryRepository materialSummaryRepository;
     private final WorkerRepository workerRepository;
-    @Autowired
-    private MaterialStatusRepository materialStatusRepository;
+    private final MaterialStatusRepository materialStatusRepository;
+    private final TransactionLogService transactionLogService;
 
-    public MaterialReviewService(MaterialReviewRepository materialReviewRepository,
-                                 MaterialRepository materialRepository,
-                                 MaterialSummaryRepository materialSummaryRepository,
-                                 WorkerRepository workerRepository) {
+    @Autowired
+    public MaterialReviewService(
+            MaterialReviewRepository materialReviewRepository,
+            MaterialRepository materialRepository,
+            MaterialSummaryRepository materialSummaryRepository,
+            WorkerRepository workerRepository,
+            MaterialStatusRepository materialStatusRepository,
+            TransactionLogService transactionLogService) {
         this.materialReviewRepository = materialReviewRepository;
         this.materialRepository = materialRepository;
         this.materialSummaryRepository = materialSummaryRepository;
         this.workerRepository = workerRepository;
+        this.materialStatusRepository = materialStatusRepository;
+        this.transactionLogService = transactionLogService;
     }
 
     public MaterialReview getMaterialReviewById(Integer id) {
@@ -57,7 +62,9 @@ public class MaterialReviewService {
         return materialReviewRepository.findAll();
     }
 
+    @Transactional
     public MaterialReview createMaterialReview(CreateMaterialReviewInput input) {
+        // Create a new review
         MaterialReview review = new MaterialReview();
         review.setMaterial(findMaterial(input.getMaterialId()));
         if (input.getMaterialSummaryId() != null) {
@@ -70,38 +77,74 @@ public class MaterialReviewService {
             review.setReviewer(findWorker(input.getReviewerId()));
         }
 
+        // Before making any changes, store the current state of the related material
+        Material relatedMaterial = findMaterial(input.getMaterialId());
+        Material previousMaterialState = cloneMaterial(relatedMaterial);
+
+        // Save the review
         MaterialReview saved = materialReviewRepository.save(review);
 
-        logAction(AuditAction.CREATE, saved);
+        // Check if material status needs to be updated
+        boolean materialStatusUpdated = false;
+        long acceptedCount = materialReviewRepository
+                .findAllByMaterial_Id(input.getMaterialId())
+                .stream()
+                .filter(r -> r.getMaterialSummary() != null &&
+                        "ACCEPTED".equalsIgnoreCase(r.getMaterialSummary().getName()))
+                .count();
 
-        if(materialSummaryRepository.findById(input.getMaterialSummaryId()).isPresent() &&
-                materialSummaryRepository.findById(input.getMaterialSummaryId()).get().getName().equalsIgnoreCase("declined")) {
+        if (acceptedCount >= 3) {
             Material material = saved.getMaterial();
-            material.setStatus(materialStatusRepository.findByName("Draft").orElse(saved.getMaterial().getStatus()));
-            materialRepository.save(material);
-        }else{
-            long acceptedCount = materialReviewRepository
-                    .findAllByMaterial_Id(input.getMaterialId())
-                    .stream()
-                    .filter(r -> r.getMaterialSummary() != null &&
-                            "ACCEPTED".equalsIgnoreCase(r.getMaterialSummary().getName()))
-                    .count();
+            MaterialStatus acceptedStatus = materialStatusRepository.findByName("Accepted").orElse(null);
 
-            if (acceptedCount >= 3) {
-                Material material = saved.getMaterial();
-                material.setStatus(materialStatusRepository.findByName("Accepted").orElse(saved.getMaterial().getStatus()));
+            if (acceptedStatus != null && !acceptedStatus.getId().equals(material.getStatus().getId())) {
+                material.setStatus(acceptedStatus);
                 materialRepository.save(material);
+                materialStatusUpdated = true;
             }
-
         }
+
+        // Log the transaction for the review
+        Map<String, Integer> relatedIds = getRelatedIds(saved);
+        transactionLogService.logTransaction(
+                AuditEntity.MATERIAL_REVIEW,
+                saved.getId(),
+                AuditAction.CREATE,
+                null, // No previous state for creation
+                saved,
+                "Material review created",
+                relatedIds
+        );
+
+        // If material status was updated, log that transaction too
+        if (materialStatusUpdated) {
+            Material updatedMaterial = saved.getMaterial();
+            relatedIds.put("materialStatusId", updatedMaterial.getStatus().getId());
+
+            transactionLogService.logTransaction(
+                    AuditEntity.MATERIAL,
+                    updatedMaterial.getId(),
+                    AuditAction.UPDATE,
+                    previousMaterialState,
+                    updatedMaterial,
+                    "Material status updated to Accepted based on reviews",
+                    relatedIds
+            );
+        }
+
         return saved;
     }
 
-
+    @Transactional
     public MaterialReview updateMaterialReview(Integer id, UpdateMaterialReviewInput input) {
+        // Find the review to update
         MaterialReview review = materialReviewRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("MaterialReview not found with id: " + id));
 
+        // Store previous state for rollback
+        MaterialReview previousState = cloneMaterialReview(review);
+
+        // Update review fields
         if (input.getMaterialId() != null) {
             review.setMaterial(findMaterial(input.getMaterialId()));
         }
@@ -121,25 +164,63 @@ public class MaterialReviewService {
             review.setReviewer(findWorker(input.getReviewerId()));
         }
 
+        // Save the updated review
         MaterialReview saved = materialReviewRepository.save(review);
 
-        logAction(AuditAction.UPDATE, saved);
+        // Log the transaction
+        Map<String, Integer> relatedIds = getRelatedIds(saved);
+        transactionLogService.logTransaction(
+                AuditEntity.MATERIAL_REVIEW,
+                saved.getId(),
+                AuditAction.UPDATE,
+                previousState,
+                saved,
+                "Material review updated",
+                relatedIds
+        );
+
         return saved;
     }
 
+    @Transactional
     public boolean deleteMaterialReview(Integer id) {
+        // Check if the review exists
         Optional<MaterialReview> opt = materialReviewRepository.findById(id);
         if (opt.isEmpty()) {
             return false;
         }
 
         MaterialReview review = opt.get();
+
+        // Store previous state for rollback
+        MaterialReview previousState = cloneMaterialReview(review);
+
+        // Get related IDs before deletion
+        Map<String, Integer> relatedIds = getRelatedIds(review);
+
+        // Delete the review
         materialReviewRepository.deleteById(id);
 
-        logAction(AuditAction.DELETE, review);
+        // Log the transaction
+        transactionLogService.logTransaction(
+                AuditEntity.MATERIAL_REVIEW,
+                id,
+                AuditAction.DELETE,
+                previousState,
+                null, // No current state after deletion
+                "Material review deleted",
+                relatedIds
+        );
+
         return true;
     }
 
+    public List<MaterialReview> getReviewsByMaterial(Integer materialId) {
+        return Optional.ofNullable(materialReviewRepository.findAllByMaterial_Id(materialId))
+                .orElse(List.of());
+    }
+
+    // Helper methods for finding related entities
     private Material findMaterial(Integer id) {
         return materialRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Material not found with id: " + id));
@@ -155,42 +236,69 @@ public class MaterialReviewService {
                 .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + id));
     }
 
-    public List<MaterialReview> getReviewsByMaterial(Integer materialId) {
-        return Optional.ofNullable(materialReviewRepository.findAllByMaterial_Id(materialId))
-                .orElse(List.of());
+    // Helper method to clone a material review for rollback
+    private MaterialReview cloneMaterialReview(MaterialReview original) {
+        MaterialReview clone = new MaterialReview();
+        clone.setId(original.getId());
+        clone.setMaterial(original.getMaterial());
+        clone.setMaterialSummary(original.getMaterialSummary());
+        clone.setComments(original.getComments());
+        clone.setSuggestedChange(original.getSuggestedChange());
+        clone.setReviewDate(original.getReviewDate());
+        clone.setReviewer(original.getReviewer());
+        clone.setCreateDatetime(original.getCreateDatetime());
+        clone.setUpdateDatetime(original.getUpdateDatetime());
+        return clone;
     }
 
-    private void logAction(AuditAction action, MaterialReview review) {
-        var user = UserContextHolder.get();
+    // Helper method to clone a material for rollback
+    private Material cloneMaterial(Material original) {
+        Material clone = new Material();
+        clone.setId(original.getId());
+        clone.setName(original.getName());
+        clone.setDescription(original.getDescription());
+        clone.setMaterialType(original.getMaterialType());
+        clone.setStatus(original.getStatus());
+        clone.setUsageRestriction(original.getUsageRestriction());
+        clone.setLicenceType(original.getLicenceType());
+        clone.setTargetAudience(original.getTargetAudience());
+        clone.setLanguage(original.getLanguage());
+        clone.setTask(original.getTask());
+        clone.setCreateDatetime(original.getCreateDatetime());
+        clone.setUpdateDatetime(original.getUpdateDatetime());
+        return clone;
+    }
 
-        AuditLog log = AuditLog.builder()
-                .workerId(user.getWorkerId())
-                .username(user.getUsername())
-                .role(user.getRole())
-                .action(action)
-                .entity(AuditEntity.MATERIAL_REVIEW)
-                .description("MaterialReview " + action + ": " + review.getComments())
-                .projectId(review.getMaterial()
-                        .getTask()
-                        .getServiceInProgress()
-                        .getProjectService()
-                        .getProject()
-                        .getId()
-                )
-                .serviceInProgressId(review.getMaterial()
-                        .getTask()
-                        .getServiceInProgress().getId())
-                .taskId(review.getMaterial() != null && review.getMaterial().getTask() != null
-                        ? review.getMaterial().getTask().getId()
-                        : null)
-                .materialId(review.getMaterial() != null ? review.getMaterial().getId() : null)
-                .materialReviewId(review.getId())
-                .timestamp(Instant.now())
-                .build();
+    // Helper method to get related entity IDs for logging
+    private Map<String, Integer> getRelatedIds(MaterialReview review) {
+        Map<String, Integer> ids = new HashMap<>();
+        ids.put("materialReviewId", review.getId());
 
-        MaterialReviewService.log.info("Registered action with review: {} With action: {}", review.getId(), log.getAction());
-        eventPublisher.publishEvent(
-                new AuditLogEvent(this, log)
-        );
+        if (review.getMaterial() != null) {
+            ids.put("materialId", review.getMaterial().getId());
+
+            if (review.getMaterial().getTask() != null) {
+                ids.put("taskId", review.getMaterial().getTask().getId());
+
+                if (review.getMaterial().getTask().getServiceInProgress() != null) {
+                    ids.put("serviceInProgressId", review.getMaterial().getTask().getServiceInProgress().getId());
+
+                    if (review.getMaterial().getTask().getServiceInProgress().getProjectService() != null &&
+                            review.getMaterial().getTask().getServiceInProgress().getProjectService().getProject() != null) {
+                        ids.put("projectId", review.getMaterial().getTask().getServiceInProgress().getProjectService().getProject().getId());
+                    }
+                }
+            }
+        }
+
+        if (review.getReviewer() != null) {
+            ids.put("workerId", review.getReviewer().getId());
+        }
+
+        if (review.getMaterialSummary() != null) {
+            ids.put("materialSummaryId", review.getMaterialSummary().getId());
+        }
+
+        return ids;
     }
 }

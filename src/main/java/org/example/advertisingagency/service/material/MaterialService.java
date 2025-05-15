@@ -15,8 +15,10 @@ import org.example.advertisingagency.model.log.AuditEntity;
 import org.example.advertisingagency.model.log.AuditLog;
 import org.example.advertisingagency.repository.*;
 import org.example.advertisingagency.service.auth.UserContextHolder;
+import org.example.advertisingagency.service.logs.TransactionLogService;
 import org.example.advertisingagency.specification.MaterialSpecifications;
 import org.example.advertisingagency.util.BatchLoaderUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,9 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,18 +47,23 @@ public class MaterialService {
     private final LanguageRepository languageRepository;
     private final TaskRepository taskRepository;
     private final MaterialReviewRepository materialReviewRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final KeywordRepository keywordRepository;
+    private final TransactionLogService transactionLogService;
 
-    public MaterialService(MaterialRepository materialRepository,
-                           MaterialKeywordRepository materialKeywordRepository,
-                           MaterialTypeRepository materialTypeRepository,
-                           MaterialStatusRepository materialStatusRepository,
-                           UsageRestrictionRepository usageRestrictionRepository,
-                           LicenceTypeRepository licenceTypeRepository,
-                           TargetAudienceRepository targetAudienceRepository,
-                           LanguageRepository languageRepository,
-                           TaskRepository taskRepository, MaterialReviewRepository materialReviewRepository, ApplicationEventPublisher eventPublisher, KeywordRepository keywordRepository) {
+    @Autowired
+    public MaterialService(
+            MaterialRepository materialRepository,
+            MaterialKeywordRepository materialKeywordRepository,
+            MaterialTypeRepository materialTypeRepository,
+            MaterialStatusRepository materialStatusRepository,
+            UsageRestrictionRepository usageRestrictionRepository,
+            LicenceTypeRepository licenceTypeRepository,
+            TargetAudienceRepository targetAudienceRepository,
+            LanguageRepository languageRepository,
+            TaskRepository taskRepository,
+            MaterialReviewRepository materialReviewRepository,
+            KeywordRepository keywordRepository,
+            TransactionLogService transactionLogService) {
         this.materialRepository = materialRepository;
         this.materialKeywordRepository = materialKeywordRepository;
         this.materialTypeRepository = materialTypeRepository;
@@ -69,14 +74,13 @@ public class MaterialService {
         this.languageRepository = languageRepository;
         this.taskRepository = taskRepository;
         this.materialReviewRepository = materialReviewRepository;
-        this.eventPublisher = eventPublisher;
         this.keywordRepository = keywordRepository;
+        this.transactionLogService = transactionLogService;
     }
 
     public List<Material> getMaterialsByTask(Integer taskId) {
         return materialRepository.findAllByTask_Id(taskId);
     }
-
 
     public Material getMaterialById(Integer id) {
         return materialRepository.findById(id)
@@ -89,6 +93,7 @@ public class MaterialService {
 
     @Transactional
     public Material createMaterial(CreateMaterialInput input) {
+        // Create a new material with input values
         Material material = new Material();
         material.setName(input.getName());
         material.setDescription(input.getDescription());
@@ -101,8 +106,11 @@ public class MaterialService {
         material.setLanguage(findLanguage(input.getLanguageId()));
         material.setTask(findTask(input.getTaskId()));
 
+        // Save the material
         material = materialRepository.save(material);
+        final Integer materialId = material.getId();
 
+        // Add keywords if provided
         if (input.getKeywordIds() != null && !input.getKeywordIds().isEmpty()) {
             List<Keyword> keywords = keywordRepository.findAllById(input.getKeywordIds());
             for (Keyword keyword : keywords) {
@@ -119,15 +127,31 @@ public class MaterialService {
             }
         }
 
-        logMaterialAction(AuditAction.CREATE, material);
+        // Log the transaction for potential rollback
+        Map<String, Integer> relatedIds = getRelatedIds(material);
+        transactionLogService.logTransaction(
+                AuditEntity.MATERIAL,
+                materialId,
+                AuditAction.CREATE,
+                null,  // No previous state for creation
+                material,
+                "Material created: " + material.getName(),
+                relatedIds
+        );
+
         return material;
     }
 
     @Transactional
     public Material updateMaterial(Integer id, UpdateMaterialInput input) {
+        // Find the material to update
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Material not found with id: " + id));
 
+        // Store the previous state for potential rollback
+        Material previousState = cloneMaterial(material);
+
+        // Update material fields
         if (input.getName() != null) material.setName(input.getName());
         if (input.getDescription() != null) material.setDescription(input.getDescription());
         material.setUpdateDatetime(Instant.now());
@@ -140,14 +164,19 @@ public class MaterialService {
         if (input.getLanguageId() != null) material.setLanguage(findLanguage(input.getLanguageId()));
         if (input.getTaskId() != null) material.setTask(findTask(input.getTaskId()));
 
+        // Save the updated material
         material = materialRepository.save(material);
 
-        // 🔄 Оновлення keywords
+        // Update keywords if provided
+        List<MaterialKeyword> previousKeywords = new ArrayList<>();
         if (input.getKeywordIds() != null) {
-            // 1. Видалити старі зв’язки
+            // Store previous keywords for potential rollback
+            previousKeywords = materialKeywordRepository.findByMaterial(material);
+
+            // Delete existing keyword associations
             materialKeywordRepository.deleteAllByMaterialId(material.getId());
 
-            // 2. Додати нові зв’язки
+            // Add new keyword associations
             if (!input.getKeywordIds().isEmpty()) {
                 List<Keyword> keywords = keywordRepository.findAllById(input.getKeywordIds());
                 for (Keyword keyword : keywords) {
@@ -164,26 +193,100 @@ public class MaterialService {
                 }
             }
         }
-        logMaterialAction(AuditAction.UPDATE, material);
+
+        // Log the transaction for potential rollback
+        Map<String, Integer> relatedIds = getRelatedIds(material);
+        transactionLogService.logTransaction(
+                AuditEntity.MATERIAL,
+                material.getId(),
+                AuditAction.UPDATE,
+                previousState,
+                material,
+                "Material updated: " + material.getName(),
+                relatedIds
+        );
+
         return material;
     }
 
-
     @Transactional
     public Boolean deleteMaterial(Integer id) {
-        if (!materialRepository.existsById(id)) {
+        // Check if the material exists
+        Optional<Material> materialOpt = materialRepository.findById(id);
+        if (materialOpt.isEmpty()) {
             return false;
         }
 
+        Material material = materialOpt.get();
+
+        // Store the material state before deletion for potential rollback
+        Material previousState = cloneMaterial(material);
+        List<MaterialKeyword> previousKeywords = materialKeywordRepository.findByMaterial(material);
+
+        // Get related IDs before deletion
+        Map<String, Integer> relatedIds = getRelatedIds(material);
+
+        // Delete keyword associations
         materialKeywordRepository.deleteByMaterialId(id);
-        Material material = materialRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Material not found with id: " + id));
-        logMaterialAction(AuditAction.DELETE, material);
+
+        // Delete the material
         materialRepository.deleteById(id);
+
+        // Log the transaction for potential rollback
+        transactionLogService.logTransaction(
+                AuditEntity.MATERIAL,
+                id,
+                AuditAction.DELETE,
+                previousState,
+                null, // No current state after deletion
+                "Material deleted: " + material.getName(),
+                relatedIds
+        );
+
         return true;
     }
 
+    // Helper method to clone a material for storing previous state
+    private Material cloneMaterial(Material original) {
+        Material clone = new Material();
+        clone.setId(original.getId());
+        clone.setName(original.getName());
+        clone.setDescription(original.getDescription());
+        clone.setCreateDatetime(original.getCreateDatetime());
+        clone.setUpdateDatetime(original.getUpdateDatetime());
+        clone.setMaterialType(original.getMaterialType());
+        clone.setStatus(original.getStatus());
+        clone.setUsageRestriction(original.getUsageRestriction());
+        clone.setLicenceType(original.getLicenceType());
+        clone.setTargetAudience(original.getTargetAudience());
+        clone.setLanguage(original.getLanguage());
+        clone.setTask(original.getTask());
+        return clone;
+    }
 
+    // Helper method to get related entity IDs for logging
+    private Map<String, Integer> getRelatedIds(Material material) {
+        Map<String, Integer> ids = new HashMap<>();
+
+        if (material.getTask() != null) {
+            ids.put("taskId", material.getTask().getId());
+
+            if (material.getTask().getServiceInProgress() != null) {
+                ids.put("serviceInProgressId", material.getTask().getServiceInProgress().getId());
+
+                if (material.getTask().getServiceInProgress().getProjectService() != null &&
+                        material.getTask().getServiceInProgress().getProjectService().getProject() != null) {
+                    ids.put("projectId", material.getTask().getServiceInProgress().getProjectService().getProject().getId());
+                }
+            }
+        }
+
+        ids.put("materialId", material.getId());
+
+        return ids;
+    }
+
+    // The rest of the service methods would be similar to the original implementation
     public List<MaterialReview> getReviewsForMaterial(Material material) {
         return materialReviewRepository.findAllByMaterial_Id(material.getId());
     }
@@ -216,11 +319,10 @@ public class MaterialService {
         return id == null ? null : taskRepository.findById(id).orElse(null);
     }
 
-
     public Map<Material, List<Keyword>> getKeywordsForMaterials(List<Material> materials) {
         List<Integer> materialIds = materials.stream()
                 .map(Material::getId)
-                .distinct() // уникнути дублікатів
+                .distinct()
                 .toList();
 
         List<MaterialKeyword> materialKeywords = BatchLoaderUtils.loadInBatches(
@@ -238,7 +340,7 @@ public class MaterialService {
                 .collect(Collectors.toMap(
                         Material::getId,
                         Function.identity(),
-                        (a, b) -> a // уникнути duplicate key
+                        (a, b) -> a
                 ));
 
         Map<Material, List<Keyword>> result = new LinkedHashMap<>();
@@ -250,8 +352,8 @@ public class MaterialService {
         return result;
     }
 
-
     public Map<Material, List<MaterialReview>> getReviewsForMaterials(List<Material> materials) {
+        // Implementation unchanged
         List<Integer> materialIds = materials.stream()
                 .map(Material::getId)
                 .distinct()
@@ -284,6 +386,7 @@ public class MaterialService {
     }
 
     public MaterialPage getPaginatedMaterials(PaginatedMaterialsInput input) {
+        // Implementation unchanged
         Sort sort = (input.sortField() != null && input.sortDirection() != null)
                 ? Sort.by(Sort.Direction.valueOf(input.sortDirection().name()), input.sortField().name())
                 : Sort.unsorted();
@@ -308,34 +411,5 @@ public class MaterialService {
 
     public List<Material> getMaterialsByWorkerId(Integer workerId) {
         return materialRepository.findAllByAssignedWorkerId(workerId);
-    }
-
-    private void logMaterialAction(AuditAction action, Material material) {
-        var user = UserContextHolder.get();
-        if(user == null) user = new AuthenticatedUserContext(1, "user", "Worker");
-        AuditLog log = AuditLog.builder()
-                .workerId(user.getWorkerId())
-                .username(user.getUsername())
-                .role(user.getRole())
-                .action(action)
-                .entity(AuditEntity.MATERIAL)
-                .description("Material " + action + ": " + material.getName())
-                .projectId(material.getTask() != null &&
-                        material.getTask().getServiceInProgress() != null &&
-                        material.getTask().getServiceInProgress().getProjectService() != null &&
-                        material.getTask().getServiceInProgress().getProjectService().getProject() != null
-                        ? material.getTask().getServiceInProgress().getProjectService().getProject().getId()
-                        : null)
-                .serviceInProgressId(material.getTask() != null &&
-                        material.getTask().getServiceInProgress() != null
-                        ? material.getTask().getServiceInProgress().getId():
-                        null)
-                .taskId(material.getTask() != null ? material.getTask().getId() : null)
-                .materialId(material.getId())
-                .materialReviewId(null)
-                .timestamp(Instant.now())
-                .build();
-
-        eventPublisher.publishEvent(new AuditLogEvent(this, log));
     }
 }

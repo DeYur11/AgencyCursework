@@ -15,9 +15,11 @@ import org.example.advertisingagency.model.log.AuditLog;
 import org.example.advertisingagency.repository.*;
 import org.example.advertisingagency.service.auth.UserContextHolder;
 import org.example.advertisingagency.service.logs.AuditLogPublisher;
+import org.example.advertisingagency.service.logs.TransactionLogService;
 import org.example.advertisingagency.specification.TaskSpecifications;
 import org.example.advertisingagency.util.state_machine.service.ServiceInProgressWorkflowService;
 import org.example.advertisingagency.util.state_machine.service.TaskWorkflowService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,38 +29,40 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class TaskService {
-
     private final TaskRepository taskRepository;
-    private final ServicesInProgressRepository servicesInProgressRepository;
-    private final WorkerRepository workerRepository;
     private final TaskStatusRepository taskStatusRepository;
-    private final MaterialKeywordRepository materialKeywordRepository;
+    private final WorkerRepository workerRepository;
+    private final ServicesInProgressRepository servicesInProgressRepository;
+    private final MaterialRepository materialRepository;
     private final TaskWorkflowService taskWorkflowService;
     private final ServiceInProgressWorkflowService serviceInProgressWorkflowService;
-    private final AuditLogEventListener auditLogEventListener;
-    private final AuditLogPublisher auditLogPublisher;
-    private final ApplicationEventPublisher eventPublisher;
+    private final TransactionLogService transactionLogService;
 
-    public TaskService(TaskRepository taskRepository,
-                       ServicesInProgressRepository servicesInProgressRepository,
-                       WorkerRepository workerRepository,
-                       TaskStatusRepository taskStatusRepository,
-                       MaterialKeywordRepository materialKeywordRepository,
-                       TaskWorkflowService taskWorkflowService, ServiceInProgressWorkflowService serviceInProgressWorkflowService, AuditLogEventListener auditLogEventListener, AuditLogPublisher auditLogPublisher, ApplicationEventPublisher applicationEventPublisher) {
+    @Autowired
+    public TaskService(
+            TaskRepository taskRepository,
+            TaskStatusRepository taskStatusRepository,
+            WorkerRepository workerRepository,
+            ServicesInProgressRepository servicesInProgressRepository,
+            MaterialRepository materialRepository,
+            TaskWorkflowService taskWorkflowService,
+            ServiceInProgressWorkflowService serviceInProgressWorkflowService,
+            TransactionLogService transactionLogService) {
         this.taskRepository = taskRepository;
-        this.servicesInProgressRepository = servicesInProgressRepository;
-        this.workerRepository = workerRepository;
         this.taskStatusRepository = taskStatusRepository;
-        this.materialKeywordRepository = materialKeywordRepository;
+        this.workerRepository = workerRepository;
+        this.servicesInProgressRepository = servicesInProgressRepository;
+        this.materialRepository = materialRepository;
         this.taskWorkflowService = taskWorkflowService;
         this.serviceInProgressWorkflowService = serviceInProgressWorkflowService;
-        this.auditLogEventListener = auditLogEventListener;
-        this.auditLogPublisher = auditLogPublisher;
-        this.eventPublisher = applicationEventPublisher;
+        this.transactionLogService = transactionLogService;
     }
 
     public Task getTaskById(Integer id) {
@@ -70,7 +74,9 @@ public class TaskService {
         return taskRepository.findAll();
     }
 
+    @Transactional
     public Task createTask(CreateTaskInput input) {
+        // Create a new task
         Task task = new Task();
         task.setName(input.getName());
         task.setDescription(input.getDescription());
@@ -79,8 +85,7 @@ public class TaskService {
         task.setDeadline(input.getDeadline());
 
         if (input.getServiceInProgressId() != null) {
-            ServicesInProgress service = findServiceInProgress(input.getServiceInProgressId());
-            task.setServiceInProgress(service);
+            task.setServiceInProgress(findServiceInProgress(input.getServiceInProgressId()));
         }
 
         if (input.getAssignedWorkerId() != null) {
@@ -91,20 +96,39 @@ public class TaskService {
         task.setPriority(input.getPriority());
         task.setValue(input.getValue());
 
-        Task saved = taskRepository.save(task);
+        // Save the task
+        Task savedTask = taskRepository.save(task);
 
-        if (saved.getServiceInProgress() != null) {
-            serviceInProgressWorkflowService.updateServiceStatusIfNeeded(saved.getServiceInProgress().getId());
+        // Update service status if needed
+        if (savedTask.getServiceInProgress() != null) {
+            serviceInProgressWorkflowService.updateServiceStatusIfNeeded(savedTask.getServiceInProgress().getId());
         }
 
-        logTaskAction(AuditAction.CREATE, saved);
-        return saved;
+        // Log the transaction
+        Map<String, Integer> relatedIds = getRelatedIds(savedTask);
+        transactionLogService.logTransaction(
+                AuditEntity.TASK,
+                savedTask.getId(),
+                AuditAction.CREATE,
+                null, // No previous state for creation
+                savedTask,
+                "Task created: " + savedTask.getName(),
+                relatedIds
+        );
+
+        return savedTask;
     }
 
+    @Transactional
     public Task updateTask(Integer id, UpdateTaskInput input) {
+        // Find the task to update
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + id));
 
+        // Store previous state for rollback
+        Task previousState = cloneTask(task);
+
+        // Update task fields
         if (input.getName() != null) task.setName(input.getName());
         if (input.getDescription() != null) task.setDescription(input.getDescription());
         if (input.getStartDate() != null) task.setStartDate(input.getStartDate());
@@ -115,84 +139,109 @@ public class TaskService {
         if (input.getPriority() != null) task.setPriority(input.getPriority());
         if (input.getValue() != null) task.setValue(input.getValue());
 
-
+        // Handle status changes through state machine
+        Task updatedTask;
         if (input.getTaskStatusId() != null) {
             int currentId = task.getTaskStatus() != null ? task.getTaskStatus().getId() : -1;
             if (input.getTaskStatusId() != currentId) {
                 TaskStatus newStatus = findTaskStatus(input.getTaskStatusId());
                 TaskEvent event = determineEvent(task.getTaskStatus(), newStatus);
                 if (event != null) {
-                    return taskWorkflowService.transition(id, event); // через state machine
+                    updatedTask = taskWorkflowService.transition(id, event); // State machine transition
                 } else {
                     throw new InvalidStateTransitionException("Invalid status transition: "
                             + currentId + " → " + input.getTaskStatusId());
                 }
+            } else {
+                updatedTask = taskRepository.save(task);
             }
+        } else {
+            updatedTask = taskRepository.save(task);
         }
 
-        Task updated = taskRepository.save(task);
-        logTaskAction(AuditAction.UPDATE, updated);
-        return updated;
+        // Log the transaction
+        Map<String, Integer> relatedIds = getRelatedIds(updatedTask);
+        transactionLogService.logTransaction(
+                AuditEntity.TASK,
+                updatedTask.getId(),
+                AuditAction.UPDATE,
+                previousState,
+                updatedTask,
+                "Task updated: " + updatedTask.getName(),
+                relatedIds
+        );
+
+        return updatedTask;
     }
 
-    private TaskEvent determineEvent(TaskStatus current, TaskStatus target) {
-        String from = current != null ? current.getName().toLowerCase() : "none";
-        String to = target.getName().toLowerCase();
-
-        return switch (from + "->" + to) {
-            case "not started->in progress" -> TaskEvent.START;
-            case "in progress->on hold"     -> TaskEvent.HOLD;
-            case "on hold->in progress", "completed->in progress" -> TaskEvent.RESUME;
-            case "in progress->completed"   -> TaskEvent.COMPLETE;
-            default -> null;
-        };
-    }
-
-
+    @Transactional
     public boolean deleteTask(Integer id) {
-        if (!taskRepository.existsById(id)) {
+        // Check if the task exists
+        Optional<Task> taskOpt = taskRepository.findById(id);
+        if (taskOpt.isEmpty()) {
             return false;
         }
-        Integer serviceInpProgressId = taskRepository.findById(id).get().getServiceInProgress().getId();
-        Task deletedTask = taskRepository.findById(id).orElseThrow();
-        logTaskAction(AuditAction.DELETE, deletedTask);
+
+        Task task = taskOpt.get();
+
+        // Store previous state for rollback
+        Task previousState = cloneTask(task);
+        Integer serviceInProgressId = task.getServiceInProgress() != null ?
+                task.getServiceInProgress().getId() : null;
+
+        // Get related IDs before deletion
+        Map<String, Integer> relatedIds = getRelatedIds(task);
+
+        // Delete the task
         taskRepository.deleteById(id);
-        serviceInProgressWorkflowService.updateServiceStatusIfNeeded(serviceInpProgressId);
+
+        // Update service status if needed
+        if (serviceInProgressId != null) {
+            serviceInProgressWorkflowService.updateServiceStatusIfNeeded(serviceInProgressId);
+        }
+
+        // Log the transaction
+        transactionLogService.logTransaction(
+                AuditEntity.TASK,
+                id,
+                AuditAction.DELETE,
+                previousState,
+                null, // No current state after deletion
+                "Task deleted: " + task.getName(),
+                relatedIds
+        );
+
         return true;
     }
 
-    private ServicesInProgress findServiceInProgress(Integer id) {
-        return servicesInProgressRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("ServicesInProgress not found with id: " + id));
+    @Transactional
+    public Task updateTaskStatus(Integer taskId, TaskEvent event) {
+        // Find the task
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + taskId));
+
+        // Store previous state for rollback
+        Task previousState = cloneTask(task);
+
+        // Perform the state transition
+        Task updatedTask = taskWorkflowService.transition(taskId, event);
+
+        // Log the transaction
+        Map<String, Integer> relatedIds = getRelatedIds(updatedTask);
+        transactionLogService.logTransaction(
+                AuditEntity.TASK,
+                updatedTask.getId(),
+                AuditAction.UPDATE,
+                previousState,
+                updatedTask,
+                "Task status updated: " + updatedTask.getName() + " - Event: " + event,
+                relatedIds
+        );
+
+        return updatedTask;
     }
 
-    private Worker findWorker(Integer id) {
-        return workerRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + id));
-    }
-
-    private TaskStatus findTaskStatus(Integer id) {
-        return taskStatusRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("TaskStatus not found with id: " + id));
-    }
-
-    public List<Task> getTasksByWorker(Integer workerId) {
-        return taskRepository.findAllByAssignedWorkerId(workerId);
-    }
-
-    public List<Task> getTasksByServiceInProgress(Integer serviceInProgressId) {
-        return taskRepository.findAllByServiceInProgress_Id(serviceInProgressId);
-    }
-
-    public List<Task> getTasksByServiceInProgressIds(List<Integer> ids) {
-        return taskRepository.findAllByServiceInProgress_IdIn(ids);
-    }
-
-    public List<Task> getTasksFromActiveProjects() {
-        return taskRepository.findAllTasksWithActiveProjects();
-    }
-
-
+    // Additional methods for pagination and filtering
     public Page<Task> findTasks(PaginatedTasksInput in) {
         Sort sort = (in.sortField() != null && in.sortDirection() != null)
                 ? Sort.by(Sort.Direction.valueOf(in.sortDirection().name()),
@@ -217,56 +266,95 @@ public class TaskService {
         return taskRepository.findAll(spec, PageRequest.of(in.page(), in.size(), sort));
     }
 
-    @Transactional
-    public Task updateTaskStatus(Integer taskId, TaskEvent event) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + taskId));
-
-//        switch (event) {
-//            case START -> {
-//                if (task.getStartDate() == null) {
-//                    task.setStartDate(Instant.from(Instant.now()));
-//                    taskRepository.save(task);
-//                }
-//            }
-//            case COMPLETE -> {
-//                task.setEndDate(Instant.now());
-//                taskRepository.save(task);
-//            }
-//            case RESUME -> {
-//                if (task.getEndDate() != null) {
-//                    task.setEndDate(null);
-//                    taskRepository.save(task);
-//                }
-//            }
-//        }
-
-        Task resultTask =  taskWorkflowService.transition(taskId, event);
-        logTaskAction(AuditAction.UPDATE, resultTask);
-        return resultTask;
+    public List<Task> getTasksByWorker(Integer workerId) {
+        return taskRepository.findAllByAssignedWorkerId(workerId);
     }
 
-    private void logTaskAction(AuditAction action, Task task) {
-        var user = UserContextHolder.get();
+    public List<Task> getTasksByServiceInProgress(Integer serviceInProgressId) {
+        return taskRepository.findAllByServiceInProgress_Id(serviceInProgressId);
+    }
 
-        AuditLog log = AuditLog.builder()
-                .workerId(user.getWorkerId())
-                .username(user.getUsername())
-                .role(user.getRole())
-                .action(action)
-                .entity(AuditEntity.TASK)
-                .description("Task " + action + ": " + task.getName())
-                .projectId(task.getServiceInProgress() != null &&
-                        task.getServiceInProgress().getProjectService() != null &&
-                        task.getServiceInProgress().getProjectService().getProject() != null
-                        ? task.getServiceInProgress().getProjectService().getProject().getId() : null)
-                .taskId(task.getId())
-                .materialId(null)
-                .materialReviewId(null)
-                .timestamp(Instant.now())
-                .build();
+    public List<Task> getTasksByServiceInProgressIds(List<Integer> ids) {
+        return taskRepository.findAllByServiceInProgress_IdIn(ids);
+    }
 
-        eventPublisher.publishEvent(new AuditLogEvent(this, log));
+    public List<Task> getTasksFromActiveProjects() {
+        return taskRepository.findAllTasksWithActiveProjects();
+    }
+
+    // Helper method to determine the event for status transition
+    private TaskEvent determineEvent(TaskStatus current, TaskStatus target) {
+        String from = current != null ? current.getName().toLowerCase() : "none";
+        String to = target.getName().toLowerCase();
+
+        return switch (from + "->" + to) {
+            case "not started->in progress" -> TaskEvent.START;
+            case "in progress->on hold"     -> TaskEvent.HOLD;
+            case "on hold->in progress", "completed->in progress" -> TaskEvent.RESUME;
+            case "in progress->completed"   -> TaskEvent.COMPLETE;
+            default -> null;
+        };
+    }
+
+    // Helper method to clone a task for rollback
+    private Task cloneTask(Task original) {
+        Task clone = new Task();
+        clone.setId(original.getId());
+        clone.setName(original.getName());
+        clone.setDescription(original.getDescription());
+        clone.setStartDate(original.getStartDate());
+        clone.setEndDate(original.getEndDate());
+        clone.setDeadline(original.getDeadline());
+        clone.setServiceInProgress(original.getServiceInProgress());
+        clone.setAssignedWorker(original.getAssignedWorker());
+        clone.setTaskStatus(original.getTaskStatus());
+        clone.setPriority(original.getPriority());
+        clone.setValue(original.getValue());
+        clone.setCreateDatetime(original.getCreateDatetime());
+        clone.setUpdateDatetime(original.getUpdateDatetime());
+        return clone;
+    }
+
+    // Helper methods for finding related entities
+    private ServicesInProgress findServiceInProgress(Integer id) {
+        return servicesInProgressRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("ServicesInProgress not found with id: " + id));
+    }
+
+    private Worker findWorker(Integer id) {
+        return workerRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Worker not found with id: " + id));
+    }
+
+    private TaskStatus findTaskStatus(Integer id) {
+        return taskStatusRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("TaskStatus not found with id: " + id));
+    }
+
+    // Helper method to get related entity IDs for logging
+    private Map<String, Integer> getRelatedIds(Task task) {
+        Map<String, Integer> ids = new HashMap<>();
+        ids.put("taskId", task.getId());
+
+        if (task.getServiceInProgress() != null) {
+            ids.put("serviceInProgressId", task.getServiceInProgress().getId());
+
+            if (task.getServiceInProgress().getProjectService() != null &&
+                    task.getServiceInProgress().getProjectService().getProject() != null) {
+                ids.put("projectId", task.getServiceInProgress().getProjectService().getProject().getId());
+            }
+        }
+
+        if (task.getAssignedWorker() != null) {
+            ids.put("workerId", task.getAssignedWorker().getId());
+        }
+
+        return ids;
+    }
+
+    private boolean allMaterialsAccepted(Integer taskId) {
+        return materialRepository.findAllByTask_Id(taskId).stream()
+                .allMatch(m -> m.getStatus().getName().equalsIgnoreCase("Accepted"));
     }
 
 }
