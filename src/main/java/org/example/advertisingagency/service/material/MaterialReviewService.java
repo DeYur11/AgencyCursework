@@ -74,19 +74,26 @@ public class MaterialReviewService {
 
         logAction(AuditAction.CREATE, saved);
 
-        long acceptedCount = materialReviewRepository
-                .findAllByMaterial_Id(input.getMaterialId())
-                .stream()
-                .filter(r -> r.getMaterialSummary() != null &&
-                        "ACCEPTED".equalsIgnoreCase(r.getMaterialSummary().getName()))
-                .count();
-
-        if (acceptedCount >= 3) {
+        if(materialSummaryRepository.findById(input.getMaterialSummaryId()).isPresent() &&
+                materialSummaryRepository.findById(input.getMaterialSummaryId()).get().getName().equalsIgnoreCase("declined")) {
             Material material = saved.getMaterial();
-            material.setStatus(materialStatusRepository.findByName("Accepted").orElse(saved.getMaterial().getStatus()));
+            material.setStatus(materialStatusRepository.findByName("Draft").orElse(saved.getMaterial().getStatus()));
             materialRepository.save(material);
-        }
+        }else{
+            long acceptedCount = materialReviewRepository
+                    .findAllByMaterial_Id(input.getMaterialId())
+                    .stream()
+                    .filter(r -> r.getMaterialSummary() != null &&
+                            "ACCEPTED".equalsIgnoreCase(r.getMaterialSummary().getName()))
+                    .count();
 
+            if (acceptedCount >= 3) {
+                Material material = saved.getMaterial();
+                material.setStatus(materialStatusRepository.findByName("Accepted").orElse(saved.getMaterial().getStatus()));
+                materialRepository.save(material);
+            }
+
+        }
         return saved;
     }
 

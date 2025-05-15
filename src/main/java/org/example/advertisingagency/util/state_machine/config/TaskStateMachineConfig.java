@@ -32,6 +32,8 @@ public class TaskStateMachineConfig extends StateMachineConfigurerAdapter<TaskSt
                 .and()
                 .withExternal().source(TaskStatusType.IN_PROGRESS).target(TaskStatusType.COMPLETED).event(TaskEvent.COMPLETE)
                 .and()
-                .withExternal().source(TaskStatusType.COMPLETED).target(TaskStatusType.IN_PROGRESS).event(TaskEvent.RESUME);
+                .withExternal().source(TaskStatusType.COMPLETED).target(TaskStatusType.IN_PROGRESS).event(TaskEvent.RESUME)
+                .and()
+                .withExternal().source(TaskStatusType.IN_PROGRESS).target(TaskStatusType.NOT_STARTED).event(TaskEvent.CANCEL);
     }
 }

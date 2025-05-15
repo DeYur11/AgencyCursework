@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.enums.TaskEvent;
 import org.example.advertisingagency.enums.TaskStatusType;
 import org.example.advertisingagency.enums.ServiceStatusType;
+import org.example.advertisingagency.exception.InvalidMaterialState;
 import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.repository.*;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -54,14 +55,14 @@ public class TaskWorkflowService {
         TaskStatusType currentStatus = TaskStatusType.from(task.getTaskStatus().getName());
 
         if (event == TaskEvent.COMPLETE && !allMaterialsAccepted(taskId)) {
-            throw new IllegalStateException("Cannot complete task — some materials are not accepted");
+            throw new InvalidMaterialState("Неможливо завершити завдання, деякі завдання ще не прийняті");
         }
 
         prepareStateMachine(currentStatus);
 
         boolean accepted = stateMachine.sendEvent(MessageBuilder.withPayload(event).build());
         if (!accepted) {
-            throw new IllegalStateException("Invalid transition: " + currentStatus + " -> " + event);
+            throw new IllegalStateException("Неприпустима зміна статусу: " + currentStatus.name() + " -> " + event);
         }
 
         TaskStatusType newStatus = stateMachine.getState().getId();

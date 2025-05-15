@@ -19,8 +19,7 @@ public class ServicesInProgress {
     @Column(name = "ServiceInProgressID", nullable = false)
     private Integer id;
 
-    @NotNull
-    @Column(name = "StartDate", nullable = false)
+    @Column(name = "StartDate")
     private LocalDate startDate;
 
     @Column(name = "EndDate")

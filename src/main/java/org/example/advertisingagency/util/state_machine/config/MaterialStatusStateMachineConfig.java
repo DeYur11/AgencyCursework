@@ -39,24 +39,18 @@ public class MaterialStatusStateMachineConfig
                 .event(MaterialStatusEvent.ADD_POSITIVE_REVIEW)
                 .guard(context -> {
                     Integer positiveCount = (Integer) context.getExtendedState().getVariables().getOrDefault("positiveCount", 0);
-                    Integer negativeCount = (Integer) context.getExtendedState().getVariables().getOrDefault("negativeCount", 0);
-                    return positiveCount >= 3 && negativeCount < 5;
+                    return positiveCount >= 3;
                 })
                 .and()
                 .withExternal()
                 .source(MaterialStatus.PENDING_REVIEW)
                 .target(MaterialStatus.REJECTED)
                 .event(MaterialStatusEvent.ADD_NEGATIVE_REVIEW)
-                .guard(new NegativeReviewGuard())
                 .and()
                 .withExternal()
                 .source(MaterialStatus.PENDING_REVIEW)
                 .target(MaterialStatus.DRAFT)
-                .event(MaterialStatusEvent.ADD_NEGATIVE_REVIEW)
-                .guard(context -> {
-                    Integer negativeCount = (Integer) context.getExtendedState().getVariables().getOrDefault("negativeCount", 0);
-                    return negativeCount < 5;
-                });
+                .event(MaterialStatusEvent.ADD_NEGATIVE_REVIEW);
     }
 }
 

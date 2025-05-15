@@ -22,8 +22,8 @@ public class GraphQLExceptionResolver implements DataFetcherExceptionResolver {
 
         List<GraphQLError> errors = switch (ex) {
             case InvalidStateTransitionException e -> List.of(buildError(e, env, ErrorType.BAD_REQUEST));
-            case InvalidMaterialState          e -> List.of(buildError(e, env, ErrorType.BAD_REQUEST));
-            case EntityInUseException          e -> List.of(buildError(e, env, ErrorType.BAD_REQUEST));
+            case InvalidMaterialState          e -> List.of(buildError(e, env, ErrorType.FORBIDDEN));
+            case EntityInUseException          e -> List.of(buildError(e, env, ErrorType.FORBIDDEN));
             default                            -> List.of();
         };
 

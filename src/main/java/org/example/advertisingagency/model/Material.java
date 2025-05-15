@@ -9,6 +9,7 @@ import org.hibernate.annotations.Nationalized;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -35,8 +36,7 @@ public class Material {
     private MaterialStatus status;
 
     @Nationalized
-    @Lob
-    @Column(name = "Description")
+    @Column(name = "Description", length = 1000)
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -58,6 +58,14 @@ public class Material {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TaskID")
     private Task task;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "MaterialKeywords", // назва таблиці-зв'язку
+            joinColumns = @JoinColumn(name = "MaterialId"), // FK на Material
+            inverseJoinColumns = @JoinColumn(name = "KeywordId") // FK на Keyword
+    )
+    private List<Keyword> keywords;
 
     @NotNull
     @Column(name = "CreateDatetime", nullable = false)

@@ -138,7 +138,7 @@ public class ProjectController {
 
         PageRequest pageRequest = PageRequest.of(input.page(), input.size(), sort);
 
-        Specification<Project> spec = ProjectSpecifications.withFilters(ProjectFilterMapper.fromInput(input.filter()));
+        Specification<Project> spec = ProjectSpecifications.withFiltersAdvancedSearch(ProjectFilterMapper.fromInput(input.filter()));
 
         Page<Project> page = projectRepository.findAll(spec, pageRequest);
 

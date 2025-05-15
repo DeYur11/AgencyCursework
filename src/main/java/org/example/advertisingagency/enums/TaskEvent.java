@@ -4,5 +4,6 @@ public enum TaskEvent {
     START,
     COMPLETE,
     HOLD,
-    RESUME
+    RESUME,
+    CANCEL
 }

@@ -1,11 +1,9 @@
 type ServiceInProgress {
     id: ID!
-    startDate: String!
+    startDate: String
     endDate: String
     cost:   Float
     status: ServiceInProgressStatus
     projectService: ProjectService
-    createDatetime: String!
-    updateDatetime: String
     tasks: [Task!]
 }

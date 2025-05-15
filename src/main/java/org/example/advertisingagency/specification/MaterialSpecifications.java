@@ -20,6 +20,10 @@ public class MaterialSpecifications {
             }
 
             if (filter.descriptionContains() != null && !filter.descriptionContains().isBlank()) {
+                predicate = cb.or(predicate, cb.like(cb.lower(root.get("description")), "%" + filter.descriptionContains().toLowerCase() + "%"));
+            }
+
+            if (filter.descriptionContains() != null && !filter.descriptionContains().isBlank() && (filter.nameContains() == null || filter.nameContains().isBlank())) {
                 predicate = cb.and(predicate, cb.like(cb.lower(root.get("description")), "%" + filter.descriptionContains().toLowerCase() + "%"));
             }
 
@@ -32,7 +36,7 @@ public class MaterialSpecifications {
             }
 
             if (filter.typeIds() != null && !filter.typeIds().isEmpty()) {
-                predicate = cb.and(predicate, root.get("type").get("id").in(filter.typeIds()));
+                predicate = cb.and(predicate, root.get("materialType").get("id").in(filter.typeIds()));
             }
 
             if (filter.taskIds() != null && !filter.taskIds().isEmpty()) {
