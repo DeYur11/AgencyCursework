@@ -49,4 +49,6 @@ public class TransactionLog {
 
     // If rolled back, reference to the rollback transaction
     private String rollbackTransactionId;
+
+    private String description;
 }

@@ -5,7 +5,6 @@ import lombok.Getter;
 /**
  * Input for rollback requests.
  */
-@Getter
 public record RollbackInput(
         String transactionId
 ) {
