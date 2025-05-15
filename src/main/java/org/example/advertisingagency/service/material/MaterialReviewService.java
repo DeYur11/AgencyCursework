@@ -3,28 +3,28 @@ package org.example.advertisingagency.service.material;
 import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.dto.material.review.CreateMaterialReviewInput;
 import org.example.advertisingagency.dto.material.review.UpdateMaterialReviewInput;
-import org.example.advertisingagency.event.AuditLogEvent;
 import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.model.log.AuditAction;
 import org.example.advertisingagency.model.log.AuditEntity;
-import org.example.advertisingagency.model.log.AuditLog;
 import org.example.advertisingagency.repository.*;
-import org.example.advertisingagency.service.auth.UserContextHolder;
 import org.example.advertisingagency.service.logs.TransactionLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Service class for MaterialReview that uses the new TransactionLogService
+ * instead of the AuditLogService and TransactionLogService.
+ * This is an example of how to migrate existing services.
+ */
 @Service
 public class MaterialReviewService {
 

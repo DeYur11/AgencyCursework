@@ -10,51 +10,81 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Enhanced repository for TransactionLog that combines the functionality
+ * of both AuditLogRepository and TransactionLogRepository.
+ */
 public interface TransactionLogRepository extends MongoRepository<TransactionLog, String> {
 
-    // Find transaction logs for a specific entity
+    // Original TransactionLogRepository methods
     List<TransactionLog> findByEntityTypeAndEntityIdOrderByTimestampDesc(AuditEntity entityType, Integer entityId);
-
-    // Find transaction logs by audit log ID
-    Optional<TransactionLog> findByAuditLogId(String auditLogId);
-
-    // Find transaction logs by worker
-    List<TransactionLog> findByWorkerIdOrderByTimestampDesc(Integer workerId);
-
-    // Find latest non-rolled back transaction for an entity
     Optional<TransactionLog> findTopByEntityTypeAndEntityIdAndRolledBackFalseOrderByTimestampDesc(
             AuditEntity entityType, Integer entityId);
-
-    // Find transactions that can be rolled back (not already rolled back)
     List<TransactionLog> findByEntityTypeAndEntityIdAndRolledBackFalseOrderByTimestampDesc(
             AuditEntity entityType, Integer entityId);
-
-    // Find all transactions related to a project
-    @Query("{'currentState.projectId': ?0}")
-    List<TransactionLog> findByProjectIdOrderByTimestampDesc(Integer projectId);
-
-    // Find transactions within a time range
+    List<TransactionLog> findByTimestampGreaterThanOrderByTimestampDesc(Instant timestamp);
     List<TransactionLog> findByEntityTypeAndEntityIdAndTimestampBetweenOrderByTimestampDesc(
             AuditEntity entityType, Integer entityId, Instant startTime, Instant endTime);
-
-    // Find transaction closest to but not after a specific time
     Optional<TransactionLog> findTopByEntityTypeAndEntityIdAndTimestampLessThanEqualOrderByTimestampDesc(
             AuditEntity entityType, Integer entityId, Instant timestamp);
-
-    // Find transactions after a specific time that haven't been rolled back
     List<TransactionLog> findByEntityTypeAndEntityIdAndTimestampGreaterThanAndRolledBackFalseOrderByTimestampDesc(
             AuditEntity entityType, Integer entityId, Instant timestamp);
-
-    // Find transactions by action type
     List<TransactionLog> findByEntityTypeAndEntityIdAndActionOrderByTimestampDesc(
             AuditEntity entityType, Integer entityId, AuditAction action);
-
-    // Count transactions by entity type and ID
     long countByEntityTypeAndEntityId(AuditEntity entityType, Integer entityId);
-
-    // Count rolled back transactions
     long countByRolledBackTrue();
 
-    // Find recent transactions across all entities
-    List<TransactionLog> findByTimestampGreaterThanOrderByTimestampDesc(Instant timestamp);
+    // Former AuditLogRepository methods
+    List<TransactionLog> findByWorkerId(Integer workerId);
+    List<TransactionLog> findByProjectId(Integer projectId);
+    List<TransactionLog> findByTaskId(Integer taskId);
+
+    // New combined query methods with limit
+    List<TransactionLog> findTop100ByProjectIdInOrderByTimestampDesc(List<Integer> projectIds);
+    List<TransactionLog> findTop100ByMaterialIdInOrderByTimestampDesc(List<Integer> materialIds);
+
+    @Query("""
+    {
+      "taskId": { "$in": ?1 },
+      "entityType": { "$in": ?0 }
+    }
+    """)
+    List<TransactionLog> findTop100ByEntityInAndTaskIdInOrderByTimestampAsc(
+            List<AuditEntity> allowedEntities, List<Integer> taskIds);
+
+    @Query("""
+    {
+      "serviceInProgressId": { "$in": ?1 },
+      "entityType": { "$in": ?0 }
+    }
+    """)
+    List<TransactionLog> findTop100ByEntityInAndServiceInProgressIdInOrderByTimestampDesc(
+            List<AuditEntity> allowedEntities, List<Integer> serviceIds);
+
+    @Query("""
+    {
+      "materialId": { "$in": ?1 },
+      "entityType": { "$in": ?0 }
+    }
+    """)
+    List<TransactionLog> findTop100ByEntityInAndMaterialIdInOrderByTimestampDesc(
+            List<AuditEntity> allowedEntities, List<Integer> materialIds);
+
+    @Query("""
+    {
+      "projectId": { "$in": ?1 },
+      "entityType": { "$in": ?0 }
+    }
+    """)
+    List<TransactionLog> findTop100ByEntityInAndProjectIdInOrderByTimestampDesc(
+            List<AuditEntity> allowedEntities, List<Integer> projectIds);
+
+    @Query("""
+    {
+      "materialId": { "$in": ?1 },
+      "entityType": { "$eq": ?0 }
+    }
+    """)
+    List<TransactionLog> findTop100ByEntityAndMaterialIdInOrderByTimestampDesc(
+            AuditEntity entity, List<Integer> materialIds);
 }

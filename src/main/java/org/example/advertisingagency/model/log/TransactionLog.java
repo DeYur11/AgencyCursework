@@ -10,8 +10,8 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * Represents a transaction log that stores the state of entities before and after changes,
- * enabling rollback capabilities.
+ * Enhanced transaction log model that combines functionality of AuditLog and TransactionLog.
+ * Supports both real-time events and rollback operations.
  */
 @Getter
 @Setter
@@ -20,9 +20,6 @@ import java.util.Map;
 public class TransactionLog {
     @Id
     private String id;
-
-    // Connection to the audit log for reference
-    private String auditLogId;
 
     // Entity information
     private AuditEntity entityType;
@@ -34,6 +31,7 @@ public class TransactionLog {
     // Who performed the action
     private Integer workerId;
     private String username;
+    private String role;
 
     // The state before the change (for rollback)
     private Map<String, Object> previousState;
@@ -50,5 +48,13 @@ public class TransactionLog {
     // If rolled back, reference to the rollback transaction
     private String rollbackTransactionId;
 
+    // Description of the transaction
     private String description;
+
+    // Related entity IDs for filtering and subscriptions
+    private Integer projectId;
+    private Integer serviceInProgressId;
+    private Integer taskId;
+    private Integer materialId;
+    private Integer materialReviewId;
 }

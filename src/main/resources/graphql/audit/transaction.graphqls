@@ -1,0 +1,59 @@
+type TransactionLog {
+    id: ID!
+    entityType: AuditEntity!
+    entityId: Int!
+    action: AuditAction!
+    workerId: Int
+    username: String
+    role: String
+    description: String
+    timestamp: String!
+    rolledBack: Boolean!
+    rollbackTransactionId: String
+    project: Project
+    task: Task
+    material: Material
+    serviceInProgress: ServiceInProgress
+    review: MaterialReview
+}
+
+type RollbackResponse {
+    success: Boolean!
+    message: String!
+    transactionId: String
+}
+
+input RestorePointInput {
+    entityType: String!
+    entityId: Int!
+    timestamp: String!
+}
+
+extend type Query {
+    # Transaction queries
+    transactionsByTaskIds(entityList: [AuditEntity!]!, taskIds: [Int!]!): [TransactionLog!]!
+    transactionsByMaterialIds(entityList: [AuditEntity!]!, materialIds: [Int!]!): [TransactionLog!]!
+    transactionsByProjectIds(entityList: [AuditEntity!]!, projectIds: [Int!]!): [TransactionLog!]!
+    transactionsByServiceInProgressIds(entityList: [AuditEntity!]!, serviceIds: [Int!]!): [TransactionLog!]!
+
+    # Transaction rollback candidates
+    getRollbackCandidates(entityType: String!, entityId: Int!): [TransactionLog!]!
+
+    # Transaction history
+    getTransactionHistory(entityType: String!, entityId: Int!, limit: Int): [TransactionLog!]!
+    getRecentTransactionHistory(entityType: String!, entityId: Int!, hours: Int!): [TransactionLog!]!
+}
+
+extend type Mutation {
+    # Rollback operations
+    rollbackTransaction(transactionId: String!, username: String!): Boolean!
+    restoreEntityToPoint(entityType: String!, entityId: Int!, timestamp: String!): RollbackResponse!
+}
+
+extend type Subscription {
+    onTransactionByMaterialReviews(materialIds: [Int!]!): TransactionLog!
+    onTransactionByTaskIds(entityList: [AuditEntity!]!, taskIds: [Int!]!): TransactionLog!
+    onTransactionByMaterialIds(entityList: [AuditEntity!]!, materialIds: [Int!]!): TransactionLog!
+    onTransactionByProjectIds(entityList: [AuditEntity!]!, projectIds: [Int!]!): TransactionLog!
+    onTransactionByServiceInProgressIds(entityList: [AuditEntity!]!, serviceIds: [Int!]!): TransactionLog!
+}

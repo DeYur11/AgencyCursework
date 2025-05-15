@@ -6,9 +6,8 @@ import org.example.advertisingagency.event.RollbackEvent;
 import org.example.advertisingagency.exception.RollbackException;
 import org.example.advertisingagency.model.log.AuditAction;
 import org.example.advertisingagency.model.log.AuditEntity;
-import org.example.advertisingagency.model.log.AuditLog;
 import org.example.advertisingagency.model.log.TransactionLog;
-import org.example.advertisingagency.repository.AuditLogRepository;
+import org.example.advertisingagency.publisher.TransactionPublisher;
 import org.example.advertisingagency.repository.TransactionLogRepository;
 import org.example.advertisingagency.service.auth.UserContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -25,27 +23,25 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Service for handling transaction logs and rollback operations.
+ * Enhanced service for transaction logs that combines the functionality
+ * of both AuditLogService and TransactionLogService.
  */
 @Slf4j
 @Service
 public class TransactionLogService {
 
     private final TransactionLogRepository transactionLogRepository;
-    private final AuditLogPublisher auditLogPublisher;
-    private final AuditLogRepository auditLogRepository;
+    private final TransactionPublisher transactionPublisher;
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
 
     @Autowired
     public TransactionLogService(
             TransactionLogRepository transactionLogRepository,
-            AuditLogPublisher auditLogPublisher,
-            AuditLogRepository auditLogRepository,
+            TransactionPublisher transactionPublisher,
             ApplicationEventPublisher eventPublisher) {
         this.transactionLogRepository = transactionLogRepository;
-        this.auditLogPublisher = auditLogPublisher;
-        this.auditLogRepository = auditLogRepository;
+        this.transactionPublisher = transactionPublisher;
         this.eventPublisher = eventPublisher;
         this.objectMapper = new ObjectMapper();
         // Configure object mapper with necessary modules
@@ -54,6 +50,8 @@ public class TransactionLogService {
 
     /**
      * Log a transaction with previous and current state for potential rollback.
+     * This method replaces the functionality of both AuditLogService.log and
+     * TransactionLogService.logTransaction.
      *
      * @param entityType The type of entity being modified
      * @param entityId The ID of the entity being modified
@@ -78,41 +76,34 @@ public class TransactionLogService {
         Map<String, Object> prevStateMap = convertObjectToMap(previousState);
         Map<String, Object> currStateMap = convertObjectToMap(currentState);
 
-        // Create and save audit log
+        // Get user context for attribution
         var user = UserContextHolder.get();
-        AuditLog auditLog = AuditLog.builder()
+
+        // Create transaction log
+        TransactionLog transactionLog = TransactionLog.builder()
+                .entityType(entityType)
+                .entityId(entityId)
+                .action(action)
                 .workerId(user.getWorkerId())
                 .username(user.getUsername())
                 .role(user.getRole())
-                .action(action)
-                .entity(entityType)
-                .description(description)
+                .previousState(prevStateMap)
+                .currentState(currStateMap)
                 .projectId(relatedIds.get("projectId"))
                 .serviceInProgressId(relatedIds.get("serviceInProgressId"))
                 .taskId(relatedIds.get("taskId"))
                 .materialId(relatedIds.get("materialId"))
                 .materialReviewId(relatedIds.get("materialReviewId"))
                 .timestamp(Instant.now())
-                .build();
-
-        AuditLog savedAuditLog = auditLogRepository.save(auditLog);
-        auditLogPublisher.publish(savedAuditLog);
-
-        // Create transaction log
-        TransactionLog transactionLog = TransactionLog.builder()
-                .auditLogId(savedAuditLog.getId())
-                .entityType(entityType)
-                .entityId(entityId)
-                .action(action)
-                .workerId(user.getWorkerId())
-                .username(user.getUsername())
-                .previousState(prevStateMap)
-                .currentState(currStateMap)
-                .timestamp(Instant.now())
                 .rolledBack(false)
+                .description(description)
                 .build();
 
-        return transactionLogRepository.save(transactionLog);
+        // Save and publish the transaction log
+        TransactionLog saved = transactionLogRepository.save(transactionLog);
+        transactionPublisher.publish(saved);
+
+        return saved;
     }
 
     /**
@@ -155,36 +146,72 @@ public class TransactionLogService {
         // Publish event for appropriate handlers to process
         eventPublisher.publishEvent(rollbackEvent);
 
-        // Create an audit log for the rollback
+        // Create a transaction log for the rollback
         var user = UserContextHolder.get();
-        AuditLog rollbackAuditLog = AuditLog.builder()
+
+        Map<String, Integer> relatedIds = new HashMap<>();
+        if (transaction.getProjectId() != null) relatedIds.put("projectId", transaction.getProjectId());
+        if (transaction.getServiceInProgressId() != null) relatedIds.put("serviceInProgressId", transaction.getServiceInProgressId());
+        if (transaction.getTaskId() != null) relatedIds.put("taskId", transaction.getTaskId());
+        if (transaction.getMaterialId() != null) relatedIds.put("materialId", transaction.getMaterialId());
+        if (transaction.getMaterialReviewId() != null) relatedIds.put("materialReviewId", transaction.getMaterialReviewId());
+
+        TransactionLog rollbackLog = TransactionLog.builder()
+                .entityType(transaction.getEntityType())
+                .entityId(transaction.getEntityId())
+                .action(rollbackAction)
                 .workerId(user.getWorkerId())
                 .username(user.getUsername())
                 .role(user.getRole())
-                .action(rollbackAction)
-                .entity(transaction.getEntityType())
-                .description("ROLLBACK: " + transaction.getEntityType() + " ID: " + transaction.getEntityId())
-                .projectId(getIntegerFromMap(transaction.getCurrentState(), "projectId"))
-                .serviceInProgressId(getIntegerFromMap(transaction.getCurrentState(), "serviceInProgressId"))
-                .taskId(getIntegerFromMap(transaction.getCurrentState(), "taskId"))
-                .materialId(getIntegerFromMap(transaction.getCurrentState(), "materialId"))
-                .materialReviewId(getIntegerFromMap(transaction.getCurrentState(), "materialReviewId"))
+                .previousState(transaction.getCurrentState())
+                .currentState(transaction.getPreviousState())
+                .projectId(transaction.getProjectId())
+                .serviceInProgressId(transaction.getServiceInProgressId())
+                .taskId(transaction.getTaskId())
+                .materialId(transaction.getMaterialId())
+                .materialReviewId(transaction.getMaterialReviewId())
                 .timestamp(Instant.now())
+                .rolledBack(false)
+                .rollbackTransactionId(transaction.getId())
+                .description("ROLLBACK: " + transaction.getDescription())
                 .build();
 
-        AuditLog savedRollbackAuditLog = auditLogRepository.save(rollbackAuditLog);
-        auditLogPublisher.publish(savedRollbackAuditLog);
+        TransactionLog savedRollbackLog = transactionLogRepository.save(rollbackLog);
+        transactionPublisher.publish(savedRollbackLog);
 
         return true;
     }
 
     /**
+     * Get transaction logs for task IDs.
+     */
+    public List<TransactionLog> findByTaskIds(List<AuditEntity> entityList, List<Integer> taskIds) {
+        return transactionLogRepository.findTop100ByEntityInAndTaskIdInOrderByTimestampAsc(entityList, taskIds);
+    }
+
+    /**
+     * Get transaction logs for material IDs.
+     */
+    public List<TransactionLog> findByMaterialIds(List<AuditEntity> entityList, List<Integer> materialIds) {
+        return transactionLogRepository.findTop100ByEntityInAndMaterialIdInOrderByTimestampDesc(entityList, materialIds);
+    }
+
+    /**
+     * Get transaction logs for project IDs.
+     */
+    public List<TransactionLog> findByProjectIds(List<AuditEntity> entityList, List<Integer> projectIds) {
+        return transactionLogRepository.findTop100ByEntityInAndProjectIdInOrderByTimestampDesc(entityList, projectIds);
+    }
+
+    /**
+     * Get transaction logs for service in progress IDs.
+     */
+    public List<TransactionLog> findByServiceInProgressIds(List<AuditEntity> entityList, List<Integer> serviceIds) {
+        return transactionLogRepository.findTop100ByEntityInAndServiceInProgressIdInOrderByTimestampDesc(entityList, serviceIds);
+    }
+
+    /**
      * Restore an entity to a specific point in time.
-     *
-     * @param entityType Type of entity
-     * @param entityId ID of the entity
-     * @param timestamp Target timestamp (ISO format)
-     * @return ID of the rollback transaction
      */
     @Transactional
     public String restoreEntityToPoint(AuditEntity entityType, Integer entityId, String timestamp) {
@@ -224,66 +251,14 @@ public class TransactionLogService {
     }
 
     /**
-     * Get the list of transactions that can be rolled back for a specific entity.
-     *
-     * @param entityType Type of entity
-     * @param entityId ID of the entity
-     * @return List of transactions that can be rolled back
-     */
-    public List<TransactionLog> getRollbackCandidates(AuditEntity entityType, Integer entityId) {
-        return transactionLogRepository.findByEntityTypeAndEntityIdAndRolledBackFalseOrderByTimestampDesc(
-                entityType, entityId);
-    }
-
-    /**
-     * Get the transaction history for a specific entity.
-     *
-     * @param entityType Type of entity
-     * @param entityId ID of the entity
-     * @return List of all transactions for the entity
-     */
-    public List<TransactionLog> getTransactionHistory(AuditEntity entityType, Integer entityId) {
-        return transactionLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(entityType, entityId);
-    }
-
-    /**
-     * Get the transaction history for all entities related to a project.
-     *
-     * @param projectId ID of the project
-     * @return List of all transactions related to the project
-     */
-    public List<TransactionLog> getTransactionHistoryByProject(Integer projectId) {
-        return transactionLogRepository.findByProjectIdOrderByTimestampDesc(projectId);
-    }
-
-    /**
-     * Get transactions within a time range for an entity.
-     *
-     * @param entityType Type of entity
-     * @param entityId ID of the entity
-     * @param startTime Start of time range
-     * @param endTime End of time range
-     * @return List of transactions within the time range
-     */
-    public List<TransactionLog> getTransactionsInTimeRange(
-            AuditEntity entityType, Integer entityId, Instant startTime, Instant endTime) {
-        return transactionLogRepository.findByEntityTypeAndEntityIdAndTimestampBetweenOrderByTimestampDesc(
-                entityType, entityId, startTime, endTime);
-    }
-
-    /**
      * Get transactions from the last N hours for an entity.
-     *
-     * @param entityType Type of entity
-     * @param entityId ID of the entity
-     * @param hours Number of hours to look back
-     * @return List of transactions from the last N hours
      */
     public List<TransactionLog> getRecentTransactions(AuditEntity entityType, Integer entityId, int hours) {
         Instant endTime = Instant.now();
         Instant startTime = endTime.minus(hours, ChronoUnit.HOURS);
 
-        return getTransactionsInTimeRange(entityType, entityId, startTime, endTime);
+        return transactionLogRepository.findByEntityTypeAndEntityIdAndTimestampBetweenOrderByTimestampDesc(
+                entityType, entityId, startTime, endTime);
     }
 
     /**
@@ -294,7 +269,7 @@ public class TransactionLogService {
             case CREATE -> AuditAction.DELETE;
             case DELETE -> AuditAction.CREATE;
             case UPDATE -> AuditAction.UPDATE; // For update, the inverse is another update
-            case ROLLBACK -> null;
+            case ROLLBACK -> AuditAction.ROLLBACK;
         };
     }
 
@@ -312,23 +287,5 @@ public class TransactionLogService {
             log.error("Error converting object to map", e);
             return new HashMap<>();
         }
-    }
-
-    /**
-     * Get integer from a map safely.
-     */
-    private Integer getIntegerFromMap(Map<String, Object> map, String key) {
-        if (map == null || !map.containsKey(key)) {
-            return null;
-        }
-
-        Object value = map.get(key);
-        if (value instanceof Integer) {
-            return (Integer) value;
-        } else if (value instanceof Number) {
-            return ((Number) value).intValue();
-        }
-
-        return null;
     }
 }
