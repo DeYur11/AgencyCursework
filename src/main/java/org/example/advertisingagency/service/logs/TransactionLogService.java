@@ -1,6 +1,5 @@
 package org.example.advertisingagency.service.logs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.example.advertisingagency.event.RollbackEvent;
 import org.example.advertisingagency.exception.RollbackException;
@@ -10,7 +9,7 @@ import org.example.advertisingagency.model.log.TransactionLog;
 import org.example.advertisingagency.publisher.TransactionPublisher;
 import org.example.advertisingagency.repository.TransactionLogRepository;
 import org.example.advertisingagency.service.auth.UserContextHolder;
-import org.hibernate.proxy.HibernateProxy;
+import org.example.advertisingagency.util.EntityStateConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -34,19 +33,18 @@ public class TransactionLogService {
     private final TransactionLogRepository transactionLogRepository;
     private final TransactionPublisher transactionPublisher;
     private final ApplicationEventPublisher eventPublisher;
-    private final ObjectMapper objectMapper;
+    private final EntityStateConverter entityStateConverter;
 
     @Autowired
     public TransactionLogService(
             TransactionLogRepository transactionLogRepository,
             TransactionPublisher transactionPublisher,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            EntityStateConverter entityStateConverter) {
         this.transactionLogRepository = transactionLogRepository;
         this.transactionPublisher = transactionPublisher;
         this.eventPublisher = eventPublisher;
-        this.objectMapper = new ObjectMapper();
-        // Configure object mapper with necessary modules
-        objectMapper.findAndRegisterModules();
+        this.entityStateConverter = entityStateConverter;
     }
 
     /**
@@ -73,9 +71,9 @@ public class TransactionLogService {
             String description,
             Map<String, Integer> relatedIds) {
 
-        // Convert objects to maps for storage
-        Map<String, Object> prevStateMap = convertObjectToMap(previousState);
-        Map<String, Object> currStateMap = convertObjectToMap(currentState);
+        // Convert objects to maps for storage using our specialized converter
+        Map<String, Object> prevStateMap = entityStateConverter.convertEntityToMap(previousState);
+        Map<String, Object> currStateMap = entityStateConverter.convertEntityToMap(currentState);
 
         // Get user context for attribution
         var user = UserContextHolder.get();
@@ -85,9 +83,9 @@ public class TransactionLogService {
                 .entityType(entityType)
                 .entityId(entityId)
                 .action(action)
-                .workerId(user.getWorkerId())
-                .username(user.getUsername())
-                .role(user.getRole())
+                .workerId(user != null ? user.getWorkerId() : null)
+                .username(user != null ? user.getUsername() : "system")
+                .role(user != null ? user.getRole() : "system")
                 .previousState(prevStateMap)
                 .currentState(currStateMap)
                 .projectId(relatedIds.get("projectId"))
@@ -104,6 +102,9 @@ public class TransactionLogService {
         TransactionLog saved = transactionLogRepository.save(transactionLog);
         transactionPublisher.publish(saved);
 
+        log.info("Logged transaction: {} - {} - {}",
+                saved.getEntityType(), saved.getAction(), saved.getEntityId());
+
         return saved;
     }
 
@@ -115,15 +116,15 @@ public class TransactionLogService {
      */
     @Transactional
     public boolean rollbackTransaction(String transactionId) {
-        // ===== 1. Перевірка існування транзакції ==========
+        // Check if transaction exists
         TransactionLog transaction = transactionLogRepository.findById(transactionId)
                 .orElseThrow(() -> new RollbackException("Transaction not found: " + transactionId));
 
-        if (transaction.isRolledBack()) {
+        if (Boolean.TRUE.equals(transaction.getRolledBack())) {
             throw new RollbackException("Transaction already rolled back: " + transactionId);
         }
 
-        // ===== 2. Формуємо зворотну дію та подію відкату ===
+        // Create rollback action and event
         AuditAction rollbackAction = getInverseAction(transaction.getAction());
 
         RollbackEvent rollbackEvent = new RollbackEvent(
@@ -135,27 +136,23 @@ public class TransactionLogService {
                 transaction.getId()
         );
 
-    /* -----------------------------------------------------------------
-       3. Публікуємо подію. Якщо який-небудь обробник відкату кине
-          виняток, вся транзакція буде відкочена, а код нижче
-          НЕ виконається, тому стан "rolledBack" не позначиться.
-       ----------------------------------------------------------------- */
+        // Publish rollback event
         eventPublisher.publishEvent(rollbackEvent);
 
-        // ===== 4. Позначаємо оригінальну транзакцію як відкочену ==========
+        // Mark original transaction as rolled back
         transaction.setRolledBack(true);
         transactionLogRepository.save(transaction);
 
-        // ===== 5. Логуємо сам факт відкату ================================
+        // Log the rollback itself
         var user = UserContextHolder.get();
 
         TransactionLog rollbackLog = TransactionLog.builder()
                 .entityType(transaction.getEntityType())
                 .entityId(transaction.getEntityId())
                 .action(rollbackAction)
-                .workerId(user.getWorkerId())
-                .username(user.getUsername())
-                .role(user.getRole())
+                .workerId(user != null ? user.getWorkerId() : null)
+                .username(user != null ? user.getUsername() : "system")
+                .role(user != null ? user.getRole() : "system")
                 .previousState(transaction.getCurrentState())
                 .currentState(transaction.getPreviousState())
                 .projectId(transaction.getProjectId())
@@ -165,47 +162,38 @@ public class TransactionLogService {
                 .materialReviewId(transaction.getMaterialReviewId())
                 .timestamp(Instant.now())
                 .rolledBack(false)
-                .rollbackTransactionId(transaction.getId())   // посилаємось на оригінал
+                .rollbackTransactionId(transaction.getId())
                 .description("ROLLBACK: " + transaction.getDescription())
                 .build();
 
         TransactionLog savedRollbackLog = transactionLogRepository.save(rollbackLog);
         transactionPublisher.publish(savedRollbackLog);
 
+        log.info("Rolled back transaction: {}", transactionId);
+
         return true;
     }
 
-
-    /**
-     * Get transaction logs for task IDs.
-     */
+    // Query methods for retrieving transaction logs
     public List<TransactionLog> findByTaskIds(List<AuditEntity> entityList, List<Integer> taskIds) {
         return transactionLogRepository.findTop100ByEntityInAndTaskIdInOrderByTimestampAsc(entityList, taskIds);
     }
 
-    /**
-     * Get transaction logs for material IDs.
-     */
     public List<TransactionLog> findByMaterialIds(List<AuditEntity> entityList, List<Integer> materialIds) {
         return transactionLogRepository.findTop100ByEntityInAndMaterialIdInOrderByTimestampDesc(entityList, materialIds);
     }
 
-    /**
-     * Get transaction logs for project IDs.
-     */
     public List<TransactionLog> findByProjectIds(List<AuditEntity> entityList, List<Integer> projectIds) {
         return transactionLogRepository.findTop100ByEntityInAndProjectIdInOrderByTimestampDesc(entityList, projectIds);
     }
 
-    /**
-     * Get transaction logs for service in progress IDs.
-     */
     public List<TransactionLog> findByServiceInProgressIds(List<AuditEntity> entityList, List<Integer> serviceIds) {
         return transactionLogRepository.findTop100ByEntityInAndServiceInProgressIdInOrderByTimestampDesc(entityList, serviceIds);
     }
 
     /**
-     * Restore an entity to a specific point in time.
+     * Restore an entity to a specific point in time by rolling back
+     * all transactions after that time.
      */
     @Transactional
     public String restoreEntityToPoint(AuditEntity entityType, Integer entityId, String timestamp) {
@@ -222,7 +210,7 @@ public class TransactionLogService {
         TransactionLog transaction = transactionOpt.get();
 
         // Check if already rolled back
-        if (transaction.isRolledBack()) {
+        if (transaction.getRolledBack()) {
             throw new RollbackException("Target transaction is already rolled back");
         }
 
@@ -265,24 +253,5 @@ public class TransactionLogService {
             case UPDATE -> AuditAction.UPDATE; // For update, the inverse is another update
             case ROLLBACK -> AuditAction.ROLLBACK;
         };
-    }
-
-    /**
-     * Convert a Java object to a Map for storage.
-     */
-    private Map<String, Object> convertObjectToMap(Object obj) {
-        if (obj == null) {
-            return new HashMap<>();
-        }
-
-        try {
-            if (obj instanceof HibernateProxy) {
-                obj = ((HibernateProxy) obj).getHibernateLazyInitializer().getImplementation();
-            }
-            return objectMapper.convertValue(obj, Map.class);
-        } catch (Exception e) {
-            log.error("Error converting object to map", e);
-            return new HashMap<>();
-        }
     }
 }

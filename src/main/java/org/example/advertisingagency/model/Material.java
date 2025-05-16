@@ -1,9 +1,6 @@
 package org.example.advertisingagency.model;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -20,22 +17,38 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "Material")
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id"
+)
 public class Material {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "MaterialID", nullable = false)
     private Integer id;
 
+    /**
+     * Material Type relationship
+     */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "TypeID")
+    @JsonIdentityReference(alwaysAsId = true)
     private MaterialType materialType;
 
-    // Додаємо поле для серіалізації ID типу матеріалу
+    // Field for serialization/deserialization with ID
     @Transient
+    @JsonProperty("materialTypeId")
     private Integer materialTypeId;
 
     public Integer getMaterialTypeId() {
         return materialType != null ? materialType.getId() : null;
+    }
+
+    public void setMaterialTypeId(Integer id) {
+        if (this.materialType == null) {
+            this.materialType = new MaterialType();
+        }
+        this.materialType.setId(id);
     }
 
     @Size(max = 150)
@@ -44,103 +57,201 @@ public class Material {
     @Column(name = "Name", nullable = false, length = 150)
     private String name;
 
+    /**
+     * Status relationship
+     */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "StatusID")
+    @JsonIdentityReference(alwaysAsId = true)
     private MaterialStatus status;
 
-    // Додаємо поле для серіалізації ID статусу
+    // Field for serialization/deserialization with ID
     @Transient
+    @JsonProperty("statusId")
     private Integer statusId;
 
     public Integer getStatusId() {
         return status != null ? status.getId() : null;
     }
 
+    public void setStatusId(Integer id) {
+        if (this.status == null) {
+            this.status = new MaterialStatus();
+        }
+        this.status.setId(id);
+    }
+
     @Nationalized
     @Column(name = "Description", length = 1000)
     private String description;
 
+    /**
+     * Usage Restriction relationship
+     */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "UsageRestrictionsID")
+    @JsonIdentityReference(alwaysAsId = true)
     private UsageRestriction usageRestriction;
 
-    // Додаємо поле для серіалізації ID обмежень використання
+    // Field for serialization/deserialization with ID
     @Transient
+    @JsonProperty("usageRestrictionId")
     private Integer usageRestrictionId;
 
     public Integer getUsageRestrictionId() {
         return usageRestriction != null ? usageRestriction.getId() : null;
     }
 
+    public void setUsageRestrictionId(Integer id) {
+        if (id != null) {
+            if (this.usageRestriction == null) {
+                this.usageRestriction = new UsageRestriction();
+            }
+            this.usageRestriction.setId(id);
+        }
+    }
+
+    /**
+     * Licence Type relationship
+     */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "LicenceTypeID")
+    @JsonIdentityReference(alwaysAsId = true)
     private LicenceType licenceType;
 
-    // Додаємо поле для серіалізації ID типу ліцензії
+    // Field for serialization/deserialization with ID
     @Transient
+    @JsonProperty("licenceTypeId")
     private Integer licenceTypeId;
 
     public Integer getLicenceTypeId() {
         return licenceType != null ? licenceType.getId() : null;
     }
 
+    public void setLicenceTypeId(Integer id) {
+        if (id != null) {
+            if (this.licenceType == null) {
+                this.licenceType = new LicenceType();
+            }
+            this.licenceType.setId(id);
+        }
+    }
+
+    /**
+     * Target Audience relationship
+     */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "TargetAudienceID")
+    @JsonIdentityReference(alwaysAsId = true)
     private TargetAudience targetAudience;
 
-    // Додаємо поле для серіалізації ID цільової аудиторії
+    // Field for serialization/deserialization with ID
     @Transient
+    @JsonProperty("targetAudienceId")
     private Integer targetAudienceId;
 
     public Integer getTargetAudienceId() {
         return targetAudience != null ? targetAudience.getId() : null;
     }
 
+    public void setTargetAudienceId(Integer id) {
+        if (id != null) {
+            if (this.targetAudience == null) {
+                this.targetAudience = new TargetAudience();
+            }
+            this.targetAudience.setId(id);
+        }
+    }
+
+    /**
+     * Language relationship
+     */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "LanguageID")
+    @JsonIdentityReference(alwaysAsId = true)
     private Language language;
 
-    // Додаємо поле для серіалізації ID мови
+    // Field for serialization/deserialization with ID
     @Transient
+    @JsonProperty("languageId")
     private Integer languageId;
 
     public Integer getLanguageId() {
         return language != null ? language.getId() : null;
     }
 
+    public void setLanguageId(Integer id) {
+        if (id != null) {
+            if (this.language == null) {
+                this.language = new Language();
+            }
+            this.language.setId(id);
+        }
+    }
+
+    /**
+     * Task relationship
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TaskID")
+    @JsonIdentityReference(alwaysAsId = true)
     private Task task;
 
-    // Додаємо поле для серіалізації ID завдання
+    // Field for serialization/deserialization with ID
     @Transient
+    @JsonProperty("taskId")
     private Integer taskId;
 
     public Integer getTaskId() {
         return task != null ? task.getId() : null;
     }
 
+    public void setTaskId(Integer id) {
+        if (id != null) {
+            if (this.task == null) {
+                this.task = new Task();
+            }
+            this.task.setId(id);
+        }
+    }
+
+    /**
+     * Keywords relationship
+     */
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "MaterialKeywords",
             joinColumns = @JoinColumn(name = "MaterialId"),
             inverseJoinColumns = @JoinColumn(name = "KeywordId")
     )
+    @JsonIdentityReference(alwaysAsId = true)
     private List<Keyword> keywords = new ArrayList<>();
 
-    // Додаємо поле для серіалізації ID ключових слів
+    // Field for serialization/deserialization with IDs
     @Transient
+    @JsonProperty("keywordIds")
     private List<Integer> keywordIds;
 
     public List<Integer> getKeywordIds() {
         if (keywords == null) return new ArrayList<>();
-        List<Integer> ids = new ArrayList<>();
-        for (Keyword keyword : keywords) {
-            ids.add(keyword.getId());
-        }
-        return ids;
+        return keywords.stream()
+                .map(Keyword::getId)
+                .toList();
     }
 
+    public void setKeywordIds(List<Integer> ids) {
+        if (ids == null) return;
+        this.keywords = new ArrayList<>();
+        for (Integer id : ids) {
+            Keyword keyword = new Keyword();
+            keyword.setId(id);
+            this.keywords.add(keyword);
+        }
+    }
+
+    /**
+     * Datetime fields
+     */
     @NotNull
     @Column(name = "CreateDatetime", nullable = false)
     private Instant createDatetime;
@@ -158,70 +269,30 @@ public class Material {
         updateDatetime = OffsetDateTime.now().toInstant();
     }
 
-    // Методи для встановлення значень за ID (для десеріалізації)
-    public void setMaterialTypeId(Integer id) {
-        if (id != null) {
-            MaterialType type = new MaterialType();
-            type.setId(id);
-            this.materialType = type;
-        }
-    }
+    /**
+     * Method to make a deep clone for rollback purposes
+     * that properly handles entity relationships.
+     */
+    public Material deepClone() {
+        Material clone = new Material();
 
-    public void setStatusId(Integer id) {
-        if (id != null) {
-            MaterialStatus status = new MaterialStatus();
-            status.setId(id);
-            this.status = status;
-        }
-    }
+        // Copy simple fields
+        clone.setId(this.id);
+        clone.setName(this.name);
+        clone.setDescription(this.description);
+        clone.setCreateDatetime(this.createDatetime);
+        clone.setUpdateDatetime(this.updateDatetime);
 
-    public void setUsageRestrictionId(Integer id) {
-        if (id != null) {
-            UsageRestriction restriction = new UsageRestriction();
-            restriction.setId(id);
-            this.usageRestriction = restriction;
-        }
-    }
+        // Copy relationship IDs
+        clone.setMaterialTypeId(this.getMaterialTypeId());
+        clone.setStatusId(this.getStatusId());
+        clone.setUsageRestrictionId(this.getUsageRestrictionId());
+        clone.setLicenceTypeId(this.getLicenceTypeId());
+        clone.setTargetAudienceId(this.getTargetAudienceId());
+        clone.setLanguageId(this.getLanguageId());
+        clone.setTaskId(this.getTaskId());
+        clone.setKeywordIds(this.getKeywordIds());
 
-    public void setLicenceTypeId(Integer id) {
-        if (id != null) {
-            LicenceType licence = new LicenceType();
-            licence.setId(id);
-            this.licenceType = licence;
-        }
-    }
-
-    public void setTargetAudienceId(Integer id) {
-        if (id != null) {
-            TargetAudience audience = new TargetAudience();
-            audience.setId(id);
-            this.targetAudience = audience;
-        }
-    }
-
-    public void setLanguageId(Integer id) {
-        if (id != null) {
-            Language lang = new Language();
-            lang.setId(id);
-            this.language = lang;
-        }
-    }
-
-    public void setTaskId(Integer id) {
-        if (id != null) {
-            Task task = new Task();
-            task.setId(id);
-            this.task = task;
-        }
-    }
-
-    public void setKeywordIds(List<Integer> ids) {
-        if (ids == null) return;
-        this.keywords = new ArrayList<>();
-        for (Integer id : ids) {
-            Keyword keyword = new Keyword();
-            keyword.setId(id);
-            this.keywords.add(keyword);
-        }
+        return clone;
     }
 }

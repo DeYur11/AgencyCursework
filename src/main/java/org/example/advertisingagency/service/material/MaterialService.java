@@ -128,7 +128,7 @@ public class MaterialService {
                 materialId,
                 AuditAction.CREATE,
                 null,  // No previous state for creation
-                material,
+                material.deepClone(),  // Use deepClone method for proper serialization
                 "Material created: " + material.getName(),
                 relatedIds
         );
@@ -142,8 +142,8 @@ public class MaterialService {
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Material not found with id: " + id));
 
-        // Store the previous state for potential rollback
-        Material previousState = cloneMaterial(material);
+        // Store the previous state for potential rollback using deepClone
+        Material previousState = material.deepClone();
 
         // Update material fields
         if (input.getName() != null) material.setName(input.getName());
@@ -195,7 +195,7 @@ public class MaterialService {
                 material.getId(),
                 AuditAction.UPDATE,
                 previousState,
-                material,
+                material.deepClone(),  // Use deepClone method for proper serialization
                 "Material updated: " + material.getName(),
                 relatedIds
         );
@@ -214,7 +214,7 @@ public class MaterialService {
         Material material = materialOpt.get();
 
         // Store the material state before deletion for potential rollback
-        Material previousState = cloneMaterial(material);
+        Material previousState = material.deepClone();
         List<MaterialKeyword> previousKeywords = materialKeywordRepository.findByMaterial(material);
 
         // Get related IDs before deletion
@@ -240,46 +240,7 @@ public class MaterialService {
         return true;
     }
 
-    // Helper method to clone a material for storing previous state
-    private Material cloneMaterial(Material original) {
-        Material clone = new Material();
-        clone.setId(original.getId());
-        clone.setName(original.getName());
-        clone.setDescription(original.getDescription());
-        clone.setCreateDatetime(original.getCreateDatetime());
-        clone.setUpdateDatetime(original.getUpdateDatetime());
-        clone.setMaterialType(original.getMaterialType());
-        clone.setStatus(original.getStatus());
-        clone.setUsageRestriction(original.getUsageRestriction());
-        clone.setLicenceType(original.getLicenceType());
-        clone.setTargetAudience(original.getTargetAudience());
-        clone.setLanguage(original.getLanguage());
-        clone.setTask(original.getTask());
-        return clone;
-    }
-
-    // Helper method to get related entity IDs for logging
-    private Map<String, Integer> getRelatedIds(Material material) {
-        Map<String, Integer> ids = new HashMap<>();
-
-        if (material.getTask() != null) {
-            ids.put("taskId", material.getTask().getId());
-
-            if (material.getTask().getServiceInProgress() != null) {
-                ids.put("serviceInProgressId", material.getTask().getServiceInProgress().getId());
-
-                if (material.getTask().getServiceInProgress().getProjectService() != null &&
-                        material.getTask().getServiceInProgress().getProjectService().getProject() != null) {
-                    ids.put("projectId", material.getTask().getServiceInProgress().getProjectService().getProject().getId());
-                }
-            }
-        }
-
-        ids.put("materialId", material.getId());
-
-        return ids;
-    }
-
+    // Helper methods for finding related entities
     private MaterialType findMaterialType(Integer id) {
         return id == null ? null : materialTypeRepository.findById(id).orElse(null);
     }
@@ -306,6 +267,28 @@ public class MaterialService {
 
     private Task findTask(Integer id) {
         return id == null ? null : taskRepository.findById(id).orElse(null);
+    }
+
+    // Helper method to get related entity IDs for logging
+    private Map<String, Integer> getRelatedIds(Material material) {
+        Map<String, Integer> ids = new HashMap<>();
+
+        if (material.getTask() != null) {
+            ids.put("taskId", material.getTask().getId());
+
+            if (material.getTask().getServiceInProgress() != null) {
+                ids.put("serviceInProgressId", material.getTask().getServiceInProgress().getId());
+
+                if (material.getTask().getServiceInProgress().getProjectService() != null &&
+                        material.getTask().getServiceInProgress().getProjectService().getProject() != null) {
+                    ids.put("projectId", material.getTask().getServiceInProgress().getProjectService().getProject().getId());
+                }
+            }
+        }
+
+        ids.put("materialId", material.getId());
+
+        return ids;
     }
 
     public Map<Material, List<Keyword>> getKeywordsForMaterials(List<Material> materials) {

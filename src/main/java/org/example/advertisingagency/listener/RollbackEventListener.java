@@ -252,11 +252,9 @@ public class RollbackEventListener {
                 }
             }
 
-            if (stateMap.containsKey("task") && stateMap.get("task") instanceof Map) {
-                Map<String, Object> taskMap = (Map<String, Object>) stateMap.get("task");
-                if (taskMap.containsKey("id")) {
-                    material.setTaskId((Integer) taskMap.get("id"));
-                }
+            if (stateMap.containsKey("task")) {
+                Integer taskId = (Integer)stateMap.get("task");
+                material.setTask(taskRepository.findById(taskId).orElseThrow(() ->  new RollbackException("Пов'язаного запису ен існує")));
             }
 
             return material;

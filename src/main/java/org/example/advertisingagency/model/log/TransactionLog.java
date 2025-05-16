@@ -13,10 +13,10 @@ import java.util.Map;
  * Enhanced transaction log model that combines functionality of AuditLog and TransactionLog.
  * Supports both real-time events and rollback operations.
  */
-@Getter
 @Setter
 @Builder
 @Document(collection = "transaction_log")
+@Getter
 public class TransactionLog {
     @Id
     private String id;
@@ -57,4 +57,8 @@ public class TransactionLog {
     private Integer taskId;
     private Integer materialId;
     private Integer materialReviewId;
+
+    public Boolean getRolledBack() {
+        return rolledBack;
+    }
 }
