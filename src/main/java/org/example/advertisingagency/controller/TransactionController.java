@@ -238,6 +238,7 @@ public class TransactionController {
     @SchemaMapping(typeName = "TransactionLog", field = "review")
     public MaterialReview getReview(TransactionLog log) {
         return log.getMaterialReviewId() != null
+
                 ? materialReviewService.getMaterialReviewById(log.getMaterialReviewId())
                 : null;
     }

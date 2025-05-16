@@ -54,8 +54,7 @@ public class MaterialReviewService {
     }
 
     public MaterialReview getMaterialReviewById(Integer id) {
-        return materialReviewRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("MaterialReview not found with id: " + id));
+        return materialReviewRepository.findById(id).orElse(null);
     }
 
     public List<MaterialReview> getAllMaterialReviews() {

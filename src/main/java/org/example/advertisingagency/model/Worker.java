@@ -1,5 +1,7 @@
 package org.example.advertisingagency.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,6 +12,9 @@ import org.hibernate.annotations.Nationalized;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property  = "id")
 @Getter
 @Setter
 @Entity

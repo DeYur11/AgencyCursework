@@ -3,7 +3,6 @@ package org.example.advertisingagency.service.project;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.StoredProcedureQuery;
-import jakarta.persistence.criteria.Predicate;
 import org.example.advertisingagency.dto.PaginatedProjectsInput;
 import org.example.advertisingagency.dto.project.CreateProjectInput;
 import org.example.advertisingagency.dto.project.ProjectFilterDTO;
@@ -11,7 +10,10 @@ import org.example.advertisingagency.dto.project.ProjectSortDTO;
 import org.example.advertisingagency.dto.project.UpdateProjectInput;
 import org.example.advertisingagency.exception.EntityInUseException;
 import org.example.advertisingagency.model.*;
+import org.example.advertisingagency.model.log.AuditAction;
+import org.example.advertisingagency.model.log.AuditEntity;
 import org.example.advertisingagency.repository.*;
+import org.example.advertisingagency.service.logs.TransactionLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -25,7 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ProjectService {
@@ -38,6 +42,7 @@ public class ProjectService {
     private final PaymentRepository paymentRepository;
     private final ProjectServiceRepository projectServiceRepository;
     private final EntityManager entityManager;
+    private final TransactionLogService transactionLogService;
 
     public ProjectService(ProjectRepository projectRepository,
                           ProjectStatusRepository projectStatusRepository,
@@ -45,7 +50,9 @@ public class ProjectService {
                           ClientRepository clientRepository,
                           WorkerRepository workerRepository,
                           PaymentRepository paymentRepository,
-                          ProjectServiceRepository projectServiceRepository, EntityManager entityManager) {
+                          ProjectServiceRepository projectServiceRepository,
+                          EntityManager entityManager,
+                          TransactionLogService transactionLogService) {
         this.projectRepository = projectRepository;
         this.projectStatusRepository = projectStatusRepository;
         this.projectTypeRepository = projectTypeRepository;
@@ -54,6 +61,7 @@ public class ProjectService {
         this.paymentRepository = paymentRepository;
         this.projectServiceRepository = projectServiceRepository;
         this.entityManager = entityManager;
+        this.transactionLogService = transactionLogService;
     }
 
     public Project getProjectById(Integer id) {
@@ -65,28 +73,86 @@ public class ProjectService {
         return projectRepository.findAllByManager_Id(projectManagerId);
     }
 
-
     @Transactional
     public Project pauseProject(Integer projectId) {
+        // Get current state of the project
+        Project project = getProjectById(projectId);
+        Project previousState = cloneProject(project);
+
         int pausedStatusId = projectStatusRepository.findByName("Paused").get().getId();
         projectRepository.executeStatusUpdateProcedure(projectId, pausedStatusId);
-        return getProjectById(projectId);
+
+        // Get updated project after status change
+        Project updatedProject = getProjectById(projectId);
+
+        // Log the transaction
+        Map<String, Integer> relatedIds = getRelatedIds(updatedProject);
+        transactionLogService.logTransaction(
+                AuditEntity.PROJECT,
+                projectId,
+                AuditAction.UPDATE,
+                previousState,
+                updatedProject,
+                "Project paused: " + updatedProject.getName(),
+                relatedIds
+        );
+
+        return updatedProject;
     }
 
     @Transactional
     public Project cancelProject(Integer projectId) {
+        // Get current state of the project
+        Project project = getProjectById(projectId);
+        Project previousState = cloneProject(project);
+
         int cancelledStatusId = projectStatusRepository.findByName("Cancelled").get().getId();
         projectRepository.executeStatusUpdateProcedure(projectId, cancelledStatusId);
-        return getProjectById(projectId);
+
+        // Get updated project after status change
+        Project updatedProject = getProjectById(projectId);
+
+        // Log the transaction
+        Map<String, Integer> relatedIds = getRelatedIds(updatedProject);
+        transactionLogService.logTransaction(
+                AuditEntity.PROJECT,
+                projectId,
+                AuditAction.UPDATE,
+                previousState,
+                updatedProject,
+                "Project cancelled: " + updatedProject.getName(),
+                relatedIds
+        );
+
+        return updatedProject;
     }
 
     @Transactional
     public Project resumeProject(Integer projectId) {
+        // Get current state of the project
+        Project project = getProjectById(projectId);
+        Project previousState = cloneProject(project);
+
         int inProgressStatusId = projectStatusRepository.findByName("Not Started").get().getId();
         projectRepository.executeStatusUpdateProcedure(projectId, inProgressStatusId);
-        return getProjectById(projectId);
-    }
 
+        // Get updated project after status change
+        Project updatedProject = getProjectById(projectId);
+
+        // Log the transaction
+        Map<String, Integer> relatedIds = getRelatedIds(updatedProject);
+        transactionLogService.logTransaction(
+                AuditEntity.PROJECT,
+                projectId,
+                AuditAction.UPDATE,
+                previousState,
+                updatedProject,
+                "Project resumed: " + updatedProject.getName(),
+                relatedIds
+        );
+
+        return updatedProject;
+    }
 
     public List<Project> getAllProjects() {
         return projectRepository.findAll();
@@ -96,6 +162,7 @@ public class ProjectService {
         return projectRepository.findAllById(ids);
     }
 
+    @Transactional
     public Project createProject(CreateProjectInput input) {
         Project project = new Project();
         project.setName(input.getName());
@@ -103,9 +170,9 @@ public class ProjectService {
         project.setCost(input.getCost() != null ? BigDecimal.valueOf(input.getCost()) : BigDecimal.ZERO);
         project.setEstimateCost(input.getEstimateCost() != null ? BigDecimal.valueOf(input.getEstimateCost()) : BigDecimal.ZERO);
         project.setPaymentDeadline(LocalDate.parse(input.getPaymentDeadline()));
-        project.setRegistrationDate(LocalDate.now());  // Тут можна встановити поточну дату як реєстраційну
+        project.setRegistrationDate(LocalDate.now());  // Current date as registration date
 
-        // Пошук клієнта, типу проекту та менеджера (якщо вони є)
+        // Find client, project type and manager
         Client client = clientRepository.findById(input.getClientId()).orElseThrow(() -> new RuntimeException("Client not found"));
         ProjectType projectType = projectTypeRepository.findById(input.getProjectTypeId()).orElseThrow(() -> new RuntimeException("ProjectType not found"));
         Worker manager = input.getManagerId() != null ? workerRepository.findById(input.getManagerId()).orElse(null) : null;
@@ -114,27 +181,62 @@ public class ProjectService {
         project.setProjectType(projectType);
         project.setManager(manager);
 
-        return projectRepository.save(project);
+        // Save the project
+        Project savedProject = projectRepository.save(project);
+
+        // Log the transaction
+        Map<String, Integer> relatedIds = getRelatedIds(savedProject);
+        transactionLogService.logTransaction(
+                AuditEntity.PROJECT,
+                savedProject.getId(),
+                AuditAction.CREATE,
+                null, // No previous state for creation
+                savedProject,
+                "Project created: " + savedProject.getName(),
+                relatedIds
+        );
+
+        return savedProject;
     }
 
+    @Transactional
     public Project updateStatus(Integer projectId, Integer statusId) {
-        ProjectStatus newStatus = projectStatusRepository.findById(statusId).orElseThrow(() -> new RuntimeException("Status not found"));
+        // Get current state of the project
         Project project = projectRepository.findById(projectId).orElseThrow(() -> new RuntimeException("Project not found"));
+        Project previousState = cloneProject(project);
+
+        ProjectStatus newStatus = projectStatusRepository.findById(statusId).orElseThrow(() -> new RuntimeException("Status not found"));
 
         StoredProcedureQuery query = entityManager.createStoredProcedureQuery("usp_UpdateProjectStatusWithCascade");
-
         query.setParameter("ProjectID", projectId);
         query.setParameter("NewStatusID", statusId);
-
         query.execute();
 
         project.setStatus(newStatus);
-        return project;
+        Project updatedProject = projectRepository.save(project);
+
+        // Log the transaction
+        Map<String, Integer> relatedIds = getRelatedIds(updatedProject);
+        transactionLogService.logTransaction(
+                AuditEntity.PROJECT,
+                projectId,
+                AuditAction.UPDATE,
+                previousState,
+                updatedProject,
+                "Project status updated to: " + newStatus.getName(),
+                relatedIds
+        );
+
+        return updatedProject;
     }
 
+    @Transactional
     public Project updateProject(Integer id, UpdateProjectInput input) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
+
+        // Store the previous state for rollback
+        Project previousState = cloneProject(project);
 
         if (input.getName() != null) project.setName(input.getName());
         if (input.getRegistrationDate() != null) project.setRegistrationDate(input.getRegistrationDate());
@@ -149,20 +251,57 @@ public class ProjectService {
         if (input.getManagerId() != null) project.setManager(findWorker(input.getManagerId()));
         if (input.getDescription() != null) project.setDescription(input.getDescription());
 
-        return projectRepository.save(project);
+        Project updatedProject = projectRepository.save(project);
+
+        // Log the transaction
+        Map<String, Integer> relatedIds = getRelatedIds(updatedProject);
+        transactionLogService.logTransaction(
+                AuditEntity.PROJECT,
+                updatedProject.getId(),
+                AuditAction.UPDATE,
+                previousState,
+                updatedProject,
+                "Project updated: " + updatedProject.getName(),
+                relatedIds
+        );
+
+        return updatedProject;
     }
 
+    @Transactional
     public boolean deleteProject(Integer id) {
         if (!projectRepository.existsById(id)) {
             return false;
         }
+
+        // Get project before deletion for transaction log
+        Project project = projectRepository.findById(id).orElse(null);
+        if (project == null) {
+            return false;
+        }
+
+        Project previousState = cloneProject(project);
+        Map<String, Integer> relatedIds = getRelatedIds(project);
+
         try {
             projectRepository.deleteById(id);
             projectRepository.flush();
+
+            // Log the transaction
+            transactionLogService.logTransaction(
+                    AuditEntity.PROJECT,
+                    id,
+                    AuditAction.DELETE,
+                    previousState,
+                    null, // No current state after deletion
+                    "Project deleted: " + project.getName(),
+                    relatedIds
+            );
+
+            return true;
         } catch (DataIntegrityViolationException e) {
-            throw new EntityInUseException("Проект має активні замовлення сервісів");
+            throw new EntityInUseException("Project has active service orders");
         }
-        return true;
     }
 
     private ProjectStatus findStatus(Integer id) {
@@ -238,8 +377,48 @@ public class ProjectService {
             if (filter.getMaxCost() != null)
                 predicates.add(cb.lessThanOrEqualTo(root.get("cost"), filter.getMaxCost()));
 
-            return cb.and(predicates.toArray(new Predicate[0]));
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
     }
 
+    // Helper method to clone a project for rollback
+    private Project cloneProject(Project original) {
+        Project clone = new Project();
+        clone.setId(original.getId());
+        clone.setName(original.getName());
+        clone.setDescription(original.getDescription());
+        clone.setRegistrationDate(original.getRegistrationDate());
+        clone.setStartDate(original.getStartDate());
+        clone.setEndDate(original.getEndDate());
+        clone.setCost(original.getCost());
+        clone.setEstimateCost(original.getEstimateCost());
+        clone.setStatus(original.getStatus());
+        clone.setProjectType(original.getProjectType());
+        clone.setPaymentDeadline(original.getPaymentDeadline());
+        clone.setClient(original.getClient());
+        clone.setManager(original.getManager());
+        clone.setCreateDatetime(original.getCreateDatetime());
+        clone.setUpdateDatetime(original.getUpdateDatetime());
+        return clone;
+    }
+
+    // Helper method to get related entity IDs for logging
+    private Map<String, Integer> getRelatedIds(Project project) {
+        Map<String, Integer> ids = new HashMap<>();
+        ids.put("projectId", project.getId());
+
+        if (project.getClient() != null) {
+            ids.put("clientId", project.getClient().getId());
+        }
+
+        if (project.getManager() != null) {
+            ids.put("managerId", project.getManager().getId());
+        }
+
+        if (project.getStatus() != null) {
+            ids.put("statusId", project.getStatus().getId());
+        }
+
+        return ids;
+    }
 }

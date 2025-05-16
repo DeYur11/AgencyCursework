@@ -5,22 +5,16 @@ import org.example.advertisingagency.dto.task.CreateTaskInput;
 import org.example.advertisingagency.dto.task.PaginatedTasksInput;
 import org.example.advertisingagency.dto.task.UpdateTaskInput;
 import org.example.advertisingagency.enums.TaskEvent;
-import org.example.advertisingagency.event.AuditLogEvent;
 import org.example.advertisingagency.exception.InvalidStateTransitionException;
-import org.example.advertisingagency.listener.AuditLogEventListener;
 import org.example.advertisingagency.model.*;
 import org.example.advertisingagency.model.log.AuditAction;
 import org.example.advertisingagency.model.log.AuditEntity;
-import org.example.advertisingagency.model.log.AuditLog;
 import org.example.advertisingagency.repository.*;
-import org.example.advertisingagency.service.auth.UserContextHolder;
-import org.example.advertisingagency.service.logs.AuditLogPublisher;
 import org.example.advertisingagency.service.logs.TransactionLogService;
 import org.example.advertisingagency.specification.TaskSpecifications;
 import org.example.advertisingagency.util.state_machine.service.ServiceInProgressWorkflowService;
 import org.example.advertisingagency.util.state_machine.service.TaskWorkflowService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -292,6 +286,7 @@ public class TaskService {
             case "in progress->on hold"     -> TaskEvent.HOLD;
             case "on hold->in progress", "completed->in progress" -> TaskEvent.RESUME;
             case "in progress->completed"   -> TaskEvent.COMPLETE;
+            case "in progress->not started" -> TaskEvent.CANCEL;
             default -> null;
         };
     }
@@ -351,10 +346,4 @@ public class TaskService {
 
         return ids;
     }
-
-    private boolean allMaterialsAccepted(Integer taskId) {
-        return materialRepository.findAllByTask_Id(taskId).stream()
-                .allMatch(m -> m.getStatus().getName().equalsIgnoreCase("Accepted"));
-    }
-
 }

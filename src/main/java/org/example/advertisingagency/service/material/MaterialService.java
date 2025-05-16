@@ -1,25 +1,19 @@
 package org.example.advertisingagency.service.material;
 
-
 import jakarta.persistence.EntityNotFoundException;
 import org.example.advertisingagency.dto.material.material.CreateMaterialInput;
 import org.example.advertisingagency.dto.material.material.MaterialPage;
 import org.example.advertisingagency.dto.material.material.PaginatedMaterialsInput;
 import org.example.advertisingagency.dto.material.material.UpdateMaterialInput;
 import org.example.advertisingagency.dto.project.PageInfo;
-import org.example.advertisingagency.event.AuditLogEvent;
 import org.example.advertisingagency.model.*;
-import org.example.advertisingagency.model.auth.AuthenticatedUserContext;
 import org.example.advertisingagency.model.log.AuditAction;
 import org.example.advertisingagency.model.log.AuditEntity;
-import org.example.advertisingagency.model.log.AuditLog;
 import org.example.advertisingagency.repository.*;
-import org.example.advertisingagency.service.auth.UserContextHolder;
 import org.example.advertisingagency.service.logs.TransactionLogService;
 import org.example.advertisingagency.specification.MaterialSpecifications;
 import org.example.advertisingagency.util.BatchLoaderUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -286,11 +280,6 @@ public class MaterialService {
         return ids;
     }
 
-    // The rest of the service methods would be similar to the original implementation
-    public List<MaterialReview> getReviewsForMaterial(Material material) {
-        return materialReviewRepository.findAllByMaterial_Id(material.getId());
-    }
-
     private MaterialType findMaterialType(Integer id) {
         return id == null ? null : materialTypeRepository.findById(id).orElse(null);
     }
@@ -353,7 +342,6 @@ public class MaterialService {
     }
 
     public Map<Material, List<MaterialReview>> getReviewsForMaterials(List<Material> materials) {
-        // Implementation unchanged
         List<Integer> materialIds = materials.stream()
                 .map(Material::getId)
                 .distinct()
@@ -386,7 +374,6 @@ public class MaterialService {
     }
 
     public MaterialPage getPaginatedMaterials(PaginatedMaterialsInput input) {
-        // Implementation unchanged
         Sort sort = (input.sortField() != null && input.sortDirection() != null)
                 ? Sort.by(Sort.Direction.valueOf(input.sortDirection().name()), input.sortField().name())
                 : Sort.unsorted();

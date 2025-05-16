@@ -1,5 +1,8 @@
 package org.example.advertisingagency.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -14,6 +17,9 @@ import java.time.OffsetDateTime;
 @Setter
 @Entity
 @Table(name = "MaterialReview")
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property  = "id")
 public class MaterialReview {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,10 +29,12 @@ public class MaterialReview {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "MaterialID", nullable = false)
+    @JsonIdentityReference(alwaysAsId = true)
     private Material material;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MaterialSummaryID")
+    @JsonIdentityReference(alwaysAsId = true)
     private MaterialSummary materialSummary;
 
     @Nationalized
@@ -44,6 +52,7 @@ public class MaterialReview {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ReviewerID")
+    @JsonIdentityReference(alwaysAsId = true)
     private Worker reviewer;
 
     @NotNull

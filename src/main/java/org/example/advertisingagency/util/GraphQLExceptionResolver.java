@@ -6,6 +6,7 @@ import graphql.schema.DataFetchingEnvironment;
 import org.example.advertisingagency.exception.EntityInUseException;
 import org.example.advertisingagency.exception.InvalidMaterialState;
 import org.example.advertisingagency.exception.InvalidStateTransitionException;
+import org.example.advertisingagency.exception.RollbackException;
 import org.springframework.graphql.execution.DataFetcherExceptionResolver;
 import org.springframework.graphql.execution.ErrorType;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ public class GraphQLExceptionResolver implements DataFetcherExceptionResolver {
             case InvalidStateTransitionException e -> List.of(buildError(e, env, ErrorType.BAD_REQUEST));
             case InvalidMaterialState          e -> List.of(buildError(e, env, ErrorType.FORBIDDEN));
             case EntityInUseException          e -> List.of(buildError(e, env, ErrorType.FORBIDDEN));
+            case RollbackException ignored ->  List.of(buildError(ignored, env, ErrorType.BAD_REQUEST));
             default                            -> List.of();
         };
 

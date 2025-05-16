@@ -10,6 +10,7 @@ import org.example.advertisingagency.model.log.TransactionLog;
 import org.example.advertisingagency.publisher.TransactionPublisher;
 import org.example.advertisingagency.repository.TransactionLogRepository;
 import org.example.advertisingagency.service.auth.UserContextHolder;
+import org.hibernate.proxy.HibernateProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -114,26 +115,17 @@ public class TransactionLogService {
      */
     @Transactional
     public boolean rollbackTransaction(String transactionId) {
-        Optional<TransactionLog> transactionOpt = transactionLogRepository.findById(transactionId);
-
-        if (transactionOpt.isEmpty()) {
-            throw new RollbackException("Transaction not found: " + transactionId);
-        }
-
-        TransactionLog transaction = transactionOpt.get();
+        // ===== 1. Перевірка існування транзакції ==========
+        TransactionLog transaction = transactionLogRepository.findById(transactionId)
+                .orElseThrow(() -> new RollbackException("Transaction not found: " + transactionId));
 
         if (transaction.isRolledBack()) {
             throw new RollbackException("Transaction already rolled back: " + transactionId);
         }
 
-        // Determine the inverse action
+        // ===== 2. Формуємо зворотну дію та подію відкату ===
         AuditAction rollbackAction = getInverseAction(transaction.getAction());
 
-        // Mark the transaction as rolled back
-        transaction.setRolledBack(true);
-        transactionLogRepository.save(transaction);
-
-        // Create a rollback event
         RollbackEvent rollbackEvent = new RollbackEvent(
                 this,
                 transaction.getEntityType(),
@@ -143,18 +135,19 @@ public class TransactionLogService {
                 transaction.getId()
         );
 
-        // Publish event for appropriate handlers to process
+    /* -----------------------------------------------------------------
+       3. Публікуємо подію. Якщо який-небудь обробник відкату кине
+          виняток, вся транзакція буде відкочена, а код нижче
+          НЕ виконається, тому стан "rolledBack" не позначиться.
+       ----------------------------------------------------------------- */
         eventPublisher.publishEvent(rollbackEvent);
 
-        // Create a transaction log for the rollback
-        var user = UserContextHolder.get();
+        // ===== 4. Позначаємо оригінальну транзакцію як відкочену ==========
+        transaction.setRolledBack(true);
+        transactionLogRepository.save(transaction);
 
-        Map<String, Integer> relatedIds = new HashMap<>();
-        if (transaction.getProjectId() != null) relatedIds.put("projectId", transaction.getProjectId());
-        if (transaction.getServiceInProgressId() != null) relatedIds.put("serviceInProgressId", transaction.getServiceInProgressId());
-        if (transaction.getTaskId() != null) relatedIds.put("taskId", transaction.getTaskId());
-        if (transaction.getMaterialId() != null) relatedIds.put("materialId", transaction.getMaterialId());
-        if (transaction.getMaterialReviewId() != null) relatedIds.put("materialReviewId", transaction.getMaterialReviewId());
+        // ===== 5. Логуємо сам факт відкату ================================
+        var user = UserContextHolder.get();
 
         TransactionLog rollbackLog = TransactionLog.builder()
                 .entityType(transaction.getEntityType())
@@ -172,7 +165,7 @@ public class TransactionLogService {
                 .materialReviewId(transaction.getMaterialReviewId())
                 .timestamp(Instant.now())
                 .rolledBack(false)
-                .rollbackTransactionId(transaction.getId())
+                .rollbackTransactionId(transaction.getId())   // посилаємось на оригінал
                 .description("ROLLBACK: " + transaction.getDescription())
                 .build();
 
@@ -181,6 +174,7 @@ public class TransactionLogService {
 
         return true;
     }
+
 
     /**
      * Get transaction logs for task IDs.
@@ -282,6 +276,9 @@ public class TransactionLogService {
         }
 
         try {
+            if (obj instanceof HibernateProxy) {
+                obj = ((HibernateProxy) obj).getHibernateLazyInitializer().getImplementation();
+            }
             return objectMapper.convertValue(obj, Map.class);
         } catch (Exception e) {
             log.error("Error converting object to map", e);

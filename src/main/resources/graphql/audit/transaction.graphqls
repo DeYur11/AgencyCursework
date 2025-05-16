@@ -3,7 +3,7 @@ type TransactionLog {
     entityType: AuditEntity!
     entityId: Int!
     action: AuditAction!
-    workerId: Int
+    worker: Worker
     username: String
     role: String
     description: String

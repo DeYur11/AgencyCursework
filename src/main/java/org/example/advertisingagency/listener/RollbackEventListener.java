@@ -1,6 +1,9 @@
 package org.example.advertisingagency.listener;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.example.advertisingagency.event.RollbackEvent;
 import org.example.advertisingagency.exception.RollbackException;
@@ -38,14 +41,14 @@ public class RollbackEventListener {
             TaskRepository taskRepository,
             MaterialRepository materialRepository,
             MaterialReviewRepository materialReviewRepository,
-            ServicesInProgressRepository servicesInProgressRepository) {
+            ServicesInProgressRepository servicesInProgressRepository,
+            ObjectMapper objectMapper) {
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
         this.materialRepository = materialRepository;
         this.materialReviewRepository = materialReviewRepository;
         this.servicesInProgressRepository = servicesInProgressRepository;
-        this.objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules();
+        this.objectMapper = objectMapper;
     }
 
     @EventListener
@@ -120,22 +123,21 @@ public class RollbackEventListener {
     private void rollbackMaterial(RollbackEvent event) {
         switch (event.getRollbackAction()) {
             case CREATE -> {
-                Material material = convertToEntity(event.getPreviousState(), Material.class);
+                Material material = convertToMaterial(event.getPreviousState());
                 materialRepository.save(material);
             }
             case UPDATE -> {
                 if (!materialRepository.existsById(event.getEntityId())) {
                     throw new RollbackException("Cannot rollback update - material does not exist: " + event.getEntityId());
                 }
-                Material material = convertToEntity(event.getPreviousState(), Material.class);
+                Material material = convertToMaterial(event.getPreviousState());
                 materialRepository.save(material);
             }
             case DELETE -> {
-                if (materialRepository.existsById(event.getEntityId())) {
-                    throw new RollbackException("Cannot rollback delete - material already exists: " + event.getEntityId());
+                if (!materialRepository.existsById(event.getEntityId())) {
+                    throw new RollbackException("Cannot rollback delete - material already not exists: " + event.getEntityId());
                 }
-                Material material = convertToEntity(event.getPreviousState(), Material.class);
-                materialRepository.save(material);
+                materialRepository.deleteById(event.getEntityId());
             }
         }
     }
@@ -191,10 +193,76 @@ public class RollbackEventListener {
      */
     private <T> T convertToEntity(Map<String, Object> stateMap, Class<T> entityClass) {
         try {
+            // Використовуємо готовий objectMapper з конфігурації
             return objectMapper.convertValue(stateMap, entityClass);
         } catch (Exception e) {
             log.error("Failed to convert state map to entity: {}", entityClass.getSimpleName(), e);
             throw new RollbackException("Failed to convert state map to entity: " + entityClass.getSimpleName(), e);
+        }
+    }
+
+    /**
+     * Спеціальний метод для конвертації Material з урахуванням ID-полів.
+     */
+    private Material convertToMaterial(Map<String, Object> stateMap) {
+        try {
+            // Спочатку десеріалізуємо базові властивості
+            Material material = objectMapper.convertValue(stateMap, Material.class);
+
+            // Обробляємо вкладені об'єкти через ID
+            if (stateMap.containsKey("materialType") && stateMap.get("materialType") instanceof Map) {
+                Map<String, Object> typeMap = (Map<String, Object>) stateMap.get("materialType");
+                if (typeMap.containsKey("id")) {
+                    material.setMaterialTypeId((Integer) typeMap.get("id"));
+                }
+            }
+
+            if (stateMap.containsKey("status") && stateMap.get("status") instanceof Map) {
+                Map<String, Object> statusMap = (Map<String, Object>) stateMap.get("status");
+                if (statusMap.containsKey("id")) {
+                    material.setStatusId((Integer) statusMap.get("id"));
+                }
+            }
+
+            if (stateMap.containsKey("usageRestriction") && stateMap.get("usageRestriction") instanceof Map) {
+                Map<String, Object> restrictionMap = (Map<String, Object>) stateMap.get("usageRestriction");
+                if (restrictionMap.containsKey("id")) {
+                    material.setUsageRestrictionId((Integer) restrictionMap.get("id"));
+                }
+            }
+
+            if (stateMap.containsKey("licenceType") && stateMap.get("licenceType") instanceof Map) {
+                Map<String, Object> licenceMap = (Map<String, Object>) stateMap.get("licenceType");
+                if (licenceMap.containsKey("id")) {
+                    material.setLicenceTypeId((Integer) licenceMap.get("id"));
+                }
+            }
+
+            if (stateMap.containsKey("targetAudience") && stateMap.get("targetAudience") instanceof Map) {
+                Map<String, Object> audienceMap = (Map<String, Object>) stateMap.get("targetAudience");
+                if (audienceMap.containsKey("id")) {
+                    material.setTargetAudienceId((Integer) audienceMap.get("id"));
+                }
+            }
+
+            if (stateMap.containsKey("language") && stateMap.get("language") instanceof Map) {
+                Map<String, Object> langMap = (Map<String, Object>) stateMap.get("language");
+                if (langMap.containsKey("id")) {
+                    material.setLanguageId((Integer) langMap.get("id"));
+                }
+            }
+
+            if (stateMap.containsKey("task") && stateMap.get("task") instanceof Map) {
+                Map<String, Object> taskMap = (Map<String, Object>) stateMap.get("task");
+                if (taskMap.containsKey("id")) {
+                    material.setTaskId((Integer) taskMap.get("id"));
+                }
+            }
+
+            return material;
+        } catch (Exception e) {
+            log.error("Failed to convert state map to Material entity", e);
+            throw new RollbackException("Failed to convert state map to Material entity", e);
         }
     }
 }

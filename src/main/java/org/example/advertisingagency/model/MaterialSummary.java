@@ -1,5 +1,7 @@
 package org.example.advertisingagency.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,6 +16,9 @@ import java.time.OffsetDateTime;
 @Setter
 @Entity
 @Table(name = "MaterialSummaries")
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property  = "id")
 public class MaterialSummary {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
